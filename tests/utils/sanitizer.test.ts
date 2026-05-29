@@ -1,5 +1,11 @@
-import { sanitizeString, sanitizePath, validateEnum } from '../../src/utils/sanitizer';
-import { SanitizationError, PathTraversalError, ValidationError } from '../../src/utils/errors';
+import {
+  sanitizeString,
+  sanitizePath,
+  validateEnum,
+  SanitizationError,
+  PathTraversalError,
+  ValidationError,
+} from '../../src/utils';
 
 describe('sanitizer', () => {
   describe('sanitizeString', () => {

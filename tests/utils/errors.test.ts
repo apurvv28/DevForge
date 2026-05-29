@@ -4,7 +4,7 @@ import {
   ValidationError,
   DetectionError,
   GeneratorError,
-} from '../../src/utils/errors';
+} from '../../src/utils';
 
 describe('custom errors', () => {
   it('SanitizationError works correctly', () => {

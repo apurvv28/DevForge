@@ -1,7 +1,7 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
-import { DevForgeFS } from '../../src/utils/fs';
+import { DevForgeFS } from '../../src/utils';
 import { PathTraversalError, ValidationError } from '../../src/utils/errors';
 
 jest.mock('fs/promises', () => {

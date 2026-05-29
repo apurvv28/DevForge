@@ -1,0 +1,30 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module"
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "security",
+    "n"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:security/recommended-legacy",
+    "plugin:n/recommended"
+  ],
+  "rules": {
+    "security/detect-non-literal-fs-filename": "error",
+    "n/no-missing-import": "off",
+    "n/no-unpublished-import": "off",
+    "n/no-unsupported-features/es-syntax": "off"
+  },
+  "env": {
+    "node": true,
+    "jest": true,
+    "es2020": true
+  }
+}

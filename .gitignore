@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+.devforge/
+.env
+*.log
+.husky/_/

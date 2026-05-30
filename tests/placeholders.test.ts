@@ -37,8 +37,9 @@ describe('placeholder stub tests for coverage', () => {
   });
 
   it('getTemplate runs without error', () => {
-    getTemplate();
-    expect(logSpy).toHaveBeenCalledWith('Template Registry');
+    const template = getTemplate('base-ci');
+    expect(template).toBeDefined();
+    expect(typeof template).toBe('string');
   });
 
   it('runValidator runs without error', () => {

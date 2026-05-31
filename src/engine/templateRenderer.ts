@@ -35,6 +35,8 @@ const ALLOWED_VARIABLES = new Set([
   'testCommand',
   'framework',
   'environments',
+  'major',
+  'minor',
 ]);
 
 /**

@@ -171,8 +171,9 @@ describe('Template Storage', () => {
 
     it('aws-ec2-deploy should reference AWS secrets correctly', () => {
       const template = getTemplate('aws-ec2-deploy');
-      expect(template).toMatch(/\$\{\{\s*secrets\.AWS_ACCESS_KEY_ID\s*\}\}/);
-      expect(template).toMatch(/\$\{\{\s*secrets\.AWS_SECRET_ACCESS_KEY\s*\}\}/);
+      expect(template).toMatch(/\$\{\{\s*secrets\.AWS_EC2_HOST\s*\}\}/);
+      expect(template).toMatch(/\$\{\{\s*secrets\.AWS_EC2_USERNAME\s*\}\}/);
+      expect(template).toMatch(/\$\{\{\s*secrets\.AWS_EC2_SSH_KEY\s*\}\}/);
     });
 
     it('docker-build should reference Docker Hub credentials', () => {
@@ -316,6 +317,8 @@ describe('Template Storage', () => {
         'testCommand',
         'framework',
         'environments',
+        'major',
+        'minor',
       ];
 
       templates.forEach((template) => {
@@ -342,6 +345,9 @@ describe('Template Storage', () => {
         'AWS_ACCESS_KEY_ID',
         'AWS_SECRET_ACCESS_KEY',
         'AWS_REGION',
+        'AWS_EC2_HOST',
+        'AWS_EC2_USERNAME',
+        'AWS_EC2_SSH_KEY',
         'EC2_INSTANCE_ID',
         'S3_BUCKET',
         'DOCKER_HUB_USERNAME',

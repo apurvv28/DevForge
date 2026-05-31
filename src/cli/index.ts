@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import { logger } from '../utils/logger';
+import { initCommand } from './initCommand';
 
 const program = new Command();
 
@@ -13,8 +14,15 @@ program
 program
   .command('init')
   .description('Initialize a new CI/CD workflow configuration')
-  .action(() => {
-    initCommand();
+  .option('--dry-run', 'Simulate generation without writing files')
+  .option('--force-detect', 'Skip detection cache and re-detect project')
+  .option('--preview', 'Show file previews before generating')
+  .action((options) => {
+    initCommand(process.cwd(), {
+      dryRun: options.dryRun ?? false,
+      forceDetect: options.forceDetect ?? false,
+      preview: options.preview ?? false,
+    });
   });
 
 program
@@ -37,10 +45,6 @@ program
   .action(() => {
     previewCommand();
   });
-
-function initCommand(): void {
-  logger.warn('Command not yet implemented');
-}
 
 function updateCommand(): void {
   logger.warn('Command not yet implemented');

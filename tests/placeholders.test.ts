@@ -26,9 +26,9 @@ describe('placeholder stub tests for coverage', () => {
     expect(logSpy).toHaveBeenCalledWith('Rule Engine Core');
   });
 
-  it('runGenerator runs without error', () => {
-    runGenerator();
-    expect(logSpy).toHaveBeenCalledWith('File Generator');
+  it('runGenerator is properly exported', () => {
+    // runGenerator requires plan and fs parameters, this just verifies it's exported
+    expect(typeof runGenerator).toBe('function');
   });
 
   it('runSecretAnalyzer runs without error', () => {

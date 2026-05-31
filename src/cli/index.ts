@@ -17,12 +17,18 @@ program
   .option('--dry-run', 'Simulate generation without writing files')
   .option('--force-detect', 'Skip detection cache and re-detect project')
   .option('--preview', 'Show file previews before generating')
-  .action((options) => {
-    initCommand(process.cwd(), {
-      dryRun: options.dryRun ?? false,
-      forceDetect: options.forceDetect ?? false,
-      preview: options.preview ?? false,
-    });
+  .action(async (options) => {
+    try {
+      await initCommand(process.cwd(), {
+        dryRun: options.dryRun ?? false,
+        forceDetect: options.forceDetect ?? false,
+        preview: options.preview ?? false,
+      });
+    } catch (err) {
+      logger.error('\n✗ DevForge initialization failed');
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(1);
+    }
   });
 
 program

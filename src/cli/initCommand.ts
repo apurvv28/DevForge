@@ -43,8 +43,11 @@ export async function initCommand(
 
     // Step 2: Collect User Configuration
     logger.info('[2/6] Gathering your preferences...');
-      // In CI/non-interactive environments, use default config to avoid prompts
-      const userConfig = process.env.CI === 'true' ? getDefaultUserConfig(detected) : await collectUserConfig(detected);
+    // In CI/non-interactive environments, use default config to avoid prompts
+    const userConfig =
+      process.env.CI === 'true'
+        ? getDefaultUserConfig(detected)
+        : await collectUserConfig(detected);
 
     // Step 3: Build Generation Plan
     logger.info('[3/6] Building generation plan...');
@@ -83,7 +86,7 @@ export async function initCommand(
       }
     } else {
       // Ask if user wants preview
-      let askPreview = { wantPreview: false } as any;
+      let askPreview: { wantPreview: boolean } = { wantPreview: false };
       if (process.env.CI === 'true') {
         askPreview.wantPreview = false;
       } else {
@@ -159,9 +162,8 @@ export async function initCommand(
       console.error(error);
     }
 
-    // Intentionally exit the process on failure to match CLI semantics.
-    // Tests mock `process.exit` so this will be intercepted during unit tests.
-    process.exit(1);
+    // Throw after logging; caller (CLI entry) should handle process exit.
+    throw error;
   }
 }
 

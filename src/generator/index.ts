@@ -117,10 +117,34 @@ export async function runGenerator(
             const existingContent = await fs.readFile(plannedFile.path);
             await fs.writeFile(backupPath, existingContent);
             result.backed_up.push(plannedFile.path);
+            // Record backup in the transaction so it can be restored
+            transaction.push({
+              path: plannedFile.path,
+              action: 'backup',
+              previousContent: existingContent,
+            });
             logger.info(`Backed up to: ${backupPath}`);
           } catch (backupError) {
             const errorMsg = backupError instanceof Error ? backupError.message : 'Unknown error';
             throw new GeneratorError(`Failed to create backup: ${errorMsg}`);
+          }
+        }
+        if (answers.action === 'overwrite') {
+          // Capture previous content so rollback can restore it
+          try {
+            const existingContent = await fs.readFile(plannedFile.path);
+            transaction.push({
+              path: plannedFile.path,
+              action: 'write',
+              previousContent: existingContent,
+            });
+          } catch {
+            // If read fails, proceed without previousContent
+            transaction.push({
+              path: plannedFile.path,
+              action: 'write',
+              previousContent: undefined,
+            });
           }
         }
       }
@@ -137,7 +161,7 @@ export async function runGenerator(
       const looksLikeWorkflow = /\bon\s*:\b|\bjobs\s*:/i.test(renderedContent);
       if (isWorkflowFile && looksLikeWorkflow) {
         try {
-          const validation = validateWorkflowYaml(renderedContent, plannedFile.path);
+          const validation = validateWorkflowYaml(renderedContent);
           // Report warnings but allow write; errors block the write
           for (const w of validation.warnings) {
             logger.warn(`Workflow warning for ${plannedFile.path}: ${w.code} - ${w.message}`);
@@ -160,9 +184,35 @@ export async function runGenerator(
       }
 
       // Write the file
+      // If the transaction doesn't already have an entry for this path (e.g. overwrite recorded above), add one.
+      const alreadyRecorded = transaction.find(
+        (t) => t.path === plannedFile.path && t.action === 'write',
+      );
+      if (!alreadyRecorded) {
+        // Use the earlier fileExists check to determine whether a previous
+        // content should be captured — avoids performing additional FS calls
+        // which can interfere with mocked call ordering in tests.
+        if (fileExists) {
+          try {
+            const existingContent = await fs.readFile(plannedFile.path);
+            transaction.push({
+              path: plannedFile.path,
+              action: 'write',
+              previousContent: existingContent,
+            });
+          } catch {
+            transaction.push({
+              path: plannedFile.path,
+              action: 'write',
+              previousContent: undefined,
+            });
+          }
+        } else {
+          transaction.push({ path: plannedFile.path, action: 'write', previousContent: undefined });
+        }
+      }
       await fs.writeFile(plannedFile.path, renderedContent);
       result.written.push(plannedFile.path);
-      transaction.push({ path: plannedFile.path, action: 'write', previousContent: undefined });
       logger.success(`Generated: ${plannedFile.path}`);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';

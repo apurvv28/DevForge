@@ -16,8 +16,10 @@ function makeResult(): ValidationResult {
   return { valid: true, errors: [], warnings: [] };
 }
 
-export function validateWorkflowYaml(content: string): ValidationResult {
+export function validateWorkflowYaml(content: string, _filePath?: string): ValidationResult {
   const result = makeResult();
+  // Consume _filePath to avoid unused variable lint warnings in some configs
+  void _filePath;
 
   // SYNTAX CHECK
   let doc: unknown;

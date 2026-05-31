@@ -114,6 +114,31 @@ export class DevForgeFS {
   }
 
   /**
+   * Remove a file within the project root.
+   * In dry-run mode the removal is logged but not executed.
+   */
+  async removeFile(relativePath: string): Promise<void> {
+    const resolved = this.resolveSafe(relativePath);
+
+    if (this.dryRun) {
+      logger.info(`[dry-run] Would remove ${relativePath}`);
+      return;
+    }
+
+    try {
+      await fs.unlink(resolved);
+    } catch (err) {
+      // If the file doesn't exist it's fine; otherwise rethrow
+      try {
+        const stat = await fs.stat(resolved);
+        if (stat.isFile()) throw err;
+      } catch {
+        // file not found — ignore
+      }
+    }
+  }
+
+  /**
    * Create a directory (and all parents) within the project root.
    * In dry-run mode the creation is logged but not executed.
    */

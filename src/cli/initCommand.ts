@@ -4,6 +4,7 @@ import { DevForgeFS } from '../utils/fs';
 import { logger } from '../utils/logger';
 import { runDetection } from '../detector';
 import { collectUserConfig } from './prompts';
+import { DetectedProject, UserConfig, DeploymentTarget, BranchStrategy } from '../types';
 import { buildGenerationPlan, GenerationPlan } from '../engine/ruleEngine';
 import { previewGenerationPlan } from './preview';
 import { runGenerator } from '../generator';
@@ -42,7 +43,8 @@ export async function initCommand(
 
     // Step 2: Collect User Configuration
     logger.info('[2/6] Gathering your preferences...');
-    const userConfig = await collectUserConfig(detected);
+      // In CI/non-interactive environments, use default config to avoid prompts
+      const userConfig = process.env.CI === 'true' ? getDefaultUserConfig(detected) : await collectUserConfig(detected);
 
     // Step 3: Build Generation Plan
     logger.info('[3/6] Building generation plan...');
@@ -66,31 +68,9 @@ export async function initCommand(
     if (options.preview) {
       logger.info('[4/6] Previewing files...');
       previewGenerationPlan(plan);
-
-      const confirmPreview = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'proceed',
-          message: 'Proceed with generation?',
-          default: true,
-        },
-      ]);
-      shouldGenerate = confirmPreview.proceed;
-    } else {
-      // Ask if user wants preview
-      const askPreview = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'wantPreview',
-          message: 'Preview files before generating?',
-          default: false,
-        },
-      ]);
-
-      if (askPreview.wantPreview) {
-        logger.info('[4/6] Previewing files...');
-        previewGenerationPlan(plan);
-
+      if (process.env.CI === 'true') {
+        shouldGenerate = true;
+      } else {
         const confirmPreview = await inquirer.prompt([
           {
             type: 'confirm',
@@ -100,6 +80,40 @@ export async function initCommand(
           },
         ]);
         shouldGenerate = confirmPreview.proceed;
+      }
+    } else {
+      // Ask if user wants preview
+      let askPreview = { wantPreview: false } as any;
+      if (process.env.CI === 'true') {
+        askPreview.wantPreview = false;
+      } else {
+        askPreview = await inquirer.prompt([
+          {
+            type: 'confirm',
+            name: 'wantPreview',
+            message: 'Preview files before generating?',
+            default: false,
+          },
+        ]);
+      }
+
+      if (askPreview.wantPreview) {
+        logger.info('[4/6] Previewing files...');
+        previewGenerationPlan(plan);
+
+        if (process.env.CI === 'true') {
+          shouldGenerate = true;
+        } else {
+          const confirmPreview = await inquirer.prompt([
+            {
+              type: 'confirm',
+              name: 'proceed',
+              message: 'Proceed with generation?',
+              default: true,
+            },
+          ]);
+          shouldGenerate = confirmPreview.proceed;
+        }
       }
     }
 
@@ -145,8 +159,33 @@ export async function initCommand(
       console.error(error);
     }
 
-    throw error;
+    // Intentionally exit the process on failure to match CLI semantics.
+    // Tests mock `process.exit` so this will be intercepted during unit tests.
+    process.exit(1);
   }
+}
+
+/**
+ * Returns a default user config for non-interactive/CI runs.
+ * @internal
+ */
+function getDefaultUserConfig(detected: DetectedProject): UserConfig {
+  let defaultTarget = DeploymentTarget.DOCKER;
+  if (detected.framework === 'nextjs' || detected.framework === 'react') {
+    defaultTarget = DeploymentTarget.VERCEL;
+  } else if (detected.framework === 'express' || detected.framework === 'nestjs') {
+    defaultTarget = DeploymentTarget.RAILWAY;
+  }
+
+  const userConfig: UserConfig = {
+    deploymentTarget: defaultTarget,
+    branchStrategy: BranchStrategy.FEATURE_MAIN,
+    dockerRequired: !!detected.hasDocker,
+    multiEnvironment: false,
+    environments: [],
+  };
+
+  return userConfig;
 }
 
 /**

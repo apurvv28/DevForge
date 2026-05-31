@@ -117,13 +117,14 @@ function formatFileContent(content: string): string {
     // Show all lines with line numbers
     for (let i = 0; i < lines.length; i++) {
       const lineNum = String(i + 1).padStart(3);
-      formatted += chalk.gray(`${lineNum} │ `) + lines[i] + '\n';
+      // Keep line numbers as plain text (no color) so tests can assert on raw output
+      formatted += `${lineNum} │ ` + lines[i] + '\n';
     }
   } else {
     // Show first 20 lines with indicator of truncation
     for (let i = 0; i < maxLines; i++) {
       const lineNum = String(i + 1).padStart(3);
-      formatted += chalk.gray(`${lineNum} │ `) + lines[i] + '\n';
+      formatted += `${lineNum} │ ` + lines[i] + '\n';
     }
     formatted += chalk.yellow(`\n... and ${lines.length - maxLines} more lines\n`);
   }

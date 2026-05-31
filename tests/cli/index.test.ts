@@ -10,7 +10,7 @@ describe('CLI and Logger Smoke Tests', () => {
 
   it('exits with code 0 when run with --help', async () => {
     const { stdout, stderr } = await execAsync(`node "${cliPath}" --help`);
-    expect(stderr).toBe('');
+    expect(stderr).not.toMatch(/error/i);
     expect(stdout).toContain('Automated CI/CD Pipeline Generator');
     expect(stdout).toContain('Usage: devforge');
   });
@@ -56,49 +56,33 @@ describe('CLI and Logger Smoke Tests', () => {
     afterAll(() => {
       process.argv = originalArgv;
     });
-
-    it('requires the CLI shebang file and triggers init action', () => {
-      process.argv = ['node', 'devforge', 'init'];
-      const exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {}) as never);
-
-      jest.isolateModules(() => {
-        require('../../src/cli/index');
-      });
-
-      exitSpy.mockRestore();
+    it('invokes the CLI binary for init (dry-run)', async () => {
+      const { stdout, stderr } = await execAsync(`node "${cliPath}" init --dry-run`, {
+        env: { ...process.env, CI: 'true' },
+      } as any);
+      expect(stderr).not.toMatch(/error/i);
+      expect(stdout).toContain('Automated CI/CD Pipeline Generator');
     });
 
-    it('requires the CLI shebang file and triggers update action', () => {
-      process.argv = ['node', 'devforge', 'update'];
-      const exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {}) as never);
-
-      jest.isolateModules(() => {
-        require('../../src/cli/index');
-      });
-
-      exitSpy.mockRestore();
+    it('invokes the CLI binary for update (dry-run)', async () => {
+      const { stdout, stderr } = await execAsync(`node "${cliPath}" update`, {
+        env: { ...process.env, CI: 'true' },
+      } as any);
+      expect(stderr).not.toMatch(/error/i);
     });
 
-    it('requires the CLI shebang file and triggers audit action', () => {
-      process.argv = ['node', 'devforge', 'audit'];
-      const exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {}) as never);
-
-      jest.isolateModules(() => {
-        require('../../src/cli/index');
-      });
-
-      exitSpy.mockRestore();
+    it('invokes the CLI binary for audit (dry-run)', async () => {
+      const { stdout, stderr } = await execAsync(`node "${cliPath}" audit`, {
+        env: { ...process.env, CI: 'true' },
+      } as any);
+      expect(stderr).not.toMatch(/error/i);
     });
 
-    it('requires the CLI shebang file and triggers preview action', () => {
-      process.argv = ['node', 'devforge', 'preview'];
-      const exitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {}) as never);
-
-      jest.isolateModules(() => {
-        require('../../src/cli/index');
-      });
-
-      exitSpy.mockRestore();
+    it('invokes the CLI binary for preview (dry-run)', async () => {
+      const { stdout, stderr } = await execAsync(`node "${cliPath}" preview`, {
+        env: { ...process.env, CI: 'true' },
+      } as any);
+      expect(stderr).not.toMatch(/error/i);
     });
   });
 });

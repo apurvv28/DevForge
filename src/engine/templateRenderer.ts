@@ -36,8 +36,12 @@ const ALLOWED_VARIABLES = new Set([
   'testCommand',
   'framework',
   'environments',
+  'environment',
   'major',
   'minor',
+  'hasTests',
+  'hasLinting',
+  'deploymentTarget',
 ]);
 
 /**

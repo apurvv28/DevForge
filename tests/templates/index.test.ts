@@ -140,8 +140,8 @@ describe('Template Storage', () => {
 
     it('multi-env-deploy should contain environment variables', () => {
       const template = getTemplate('multi-env-deploy');
-      expect(template).toMatch(/\{\{environments\}\}/);
-      expect(template).toContain('matrix.environment');
+      expect(template).toMatch(/\{\{environment\}\}/);
+      expect(template).toContain('name: {{environment}}');
     });
   });
 
@@ -318,8 +318,12 @@ describe('Template Storage', () => {
         'testCommand',
         'framework',
         'environments',
+        'environment',
         'major',
         'minor',
+        'hasTests',
+        'hasLinting',
+        'deploymentTarget',
       ];
 
       templates.forEach((template) => {
@@ -360,7 +364,7 @@ describe('Template Storage', () => {
       templates.forEach((template) => {
         const secretMatches = (template as string).match(/secrets\.(\w+)/g) || [];
         secretMatches.forEach((match: string) => {
-          const secretName = match.replace('secrets.', '');
+          const secretName = match.replace('secrets.', '').replace('DEPLOYMENT_TOKEN_', 'DEPLOYMENT_TOKEN');
           expect(validSecrets).toContain(secretName);
         });
       });

@@ -6,6 +6,7 @@ import { logger } from '../utils/logger';
 import { GeneratorError } from '../utils/errors';
 import inquirer from 'inquirer';
 import { validateWorkflowYaml } from '../validator/yamlValidator';
+import { DevForgeConfig } from '../types';
 
 /**
  * Result of a generation run with summary of what was written, skipped, and backed up.
@@ -24,6 +25,7 @@ export interface LastRunMetadata {
   generationResult: GenerationResult;
   planHash: string;
   timestamp: string;
+  config?: DevForgeConfig;
 }
 
 /**
@@ -230,6 +232,7 @@ export async function runGenerator(
       generationResult: result,
       planHash: plan.planHash,
       timestamp: new Date().toISOString(),
+      config: plan.config,
     };
     await fs.ensureDir('.devforge');
     await fs.writeFile('.devforge/last-run.json', JSON.stringify(metadata, null, 2));

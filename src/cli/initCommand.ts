@@ -11,6 +11,7 @@ import { runGenerator } from '../generator';
 import { extractSecrets, generateSecretsDoc } from '../secrets/secretsAnalyzer';
 import { DevForgeConfigSchema } from '../types';
 import { readFile } from 'fs/promises';
+import { performance } from 'perf_hooks';
 
 /**
  * Orchestrates the complete DevForge initialization workflow.
@@ -26,9 +27,20 @@ export async function initCommand(
     dryRun?: boolean;
     forceDetect?: boolean;
     preview?: boolean;
+    timing?: boolean;
+    verbose?: boolean;
   } = {},
 ): Promise<void> {
   const dryRun = options.dryRun ?? false;
+  const timingEnabled = Boolean(options.timing || options.verbose);
+  const timings: Array<{ label: string; value: number }> = [];
+
+  const measure = async <T>(label: string, fn: () => Promise<T>): Promise<T> => {
+    const start = performance.now();
+    const result = await fn();
+    timings.push({ label, value: Math.round(performance.now() - start) });
+    return result;
+  };
 
   try {
     // Print DevForge banner
@@ -39,7 +51,9 @@ export async function initCommand(
 
     // Step 1: Project Detection
     logger.info('[1/6] Detecting your project...');
-    const detected = await runDetection(fs, { forceDetect: options.forceDetect });
+    const detected = timingEnabled
+      ? await measure('Detection', () => runDetection(fs, { forceDetect: options.forceDetect }))
+      : await runDetection(fs, { forceDetect: options.forceDetect });
 
     // Step 2: Collect User Configuration
     logger.info('[2/6] Gathering your preferences...');
@@ -47,7 +61,9 @@ export async function initCommand(
     const userConfig =
       process.env.CI === 'true'
         ? getDefaultUserConfig(detected)
-        : await collectUserConfig(detected);
+        : timingEnabled
+          ? await measure('Prompts', () => collectUserConfig(detected))
+          : await collectUserConfig(detected);
 
     // Step 3: Build Generation Plan
     logger.info('[3/6] Building generation plan...');
@@ -127,7 +143,9 @@ export async function initCommand(
 
     // Step 5: Generate Files
     logger.info('[5/6] Generating files...');
-    const generationResult = await runGenerator(plan, fs);
+    const generationResult = timingEnabled
+      ? await measure('Writing', () => runGenerator(plan, fs))
+      : await runGenerator(plan, fs);
 
     if (generationResult.errors && generationResult.errors.length > 0) {
       logger.error('Generation completed with errors:');
@@ -151,6 +169,10 @@ export async function initCommand(
     await fs.writeFile('.devforge/SECRETS_REQUIRED.md', secretsDoc);
 
     logger.success('✓ SECRETS_REQUIRED.md created');
+
+    if (timingEnabled) {
+      printTimings(timings);
+    }
 
     // Print final success message
     printSuccessMessage(totalGenerated, secrets.length);
@@ -199,6 +221,7 @@ function printBanner(): void {
   console.log(chalk.bold(chalk.cyan('╔══════════════════════════════════════╗')));
   console.log(chalk.bold(chalk.cyan('║          🚀 DevForge 1.0.0            ║')));
   console.log(chalk.bold(chalk.cyan('║  Automated CI/CD Pipeline Generator   ║')));
+  console.log(chalk.bold(chalk.cyan('║  See docs/COMMANDS.md for usage       ║')));
   console.log(chalk.bold(chalk.cyan('╚══════════════════════════════════════╝')));
   console.log('');
 }
@@ -260,4 +283,21 @@ async function getPackageVersion(): Promise<string> {
   } catch {
     return '1.0.0';
   }
+}
+
+function printTimings(timings: Array<{ label: string; value: number }>): void {
+  if (timings.length === 0) {
+    return;
+  }
+
+  console.log('');
+  console.log(chalk.bold(chalk.cyan('Timing summary')));
+
+  for (const timing of timings) {
+    console.log(chalk.gray(`✓ ${timing.label}: ${timing.value}ms`));
+  }
+
+  const total = timings.reduce((sum, entry) => sum + entry.value, 0);
+  console.log(chalk.gray('─'.repeat(20)));
+  console.log(chalk.gray(`Total: ${total}ms`));
 }

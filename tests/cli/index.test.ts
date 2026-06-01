@@ -1,5 +1,7 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import * as fs from 'fs/promises';
+import * as os from 'os';
 import * as path from 'path';
 import { logger } from '../../src/utils/logger';
 
@@ -13,6 +15,14 @@ describe('CLI and Logger Smoke Tests', () => {
     expect(stderr).not.toMatch(/error/i);
     expect(stdout).toContain('Automated CI/CD Pipeline Generator');
     expect(stdout).toContain('Usage: devforge');
+  });
+
+  it('warns about package integrity in production when launched outside node_modules', async () => {
+    const { stderr } = await execAsync(`node "${cliPath}" --help`, {
+      env: { ...process.env, NODE_ENV: 'production' },
+    } as any);
+
+    expect(stderr).toContain('Package integrity check');
   });
 
   it('exits with code 1 for unknown commands', async () => {
@@ -65,17 +75,29 @@ describe('CLI and Logger Smoke Tests', () => {
     });
 
     it('invokes the CLI binary for update (dry-run)', async () => {
-      const { stdout, stderr } = await execAsync(`node "${cliPath}" update`, {
-        env: { ...process.env, CI: 'true' },
-      } as any);
-      expect(stderr).not.toMatch(/error/i);
+      const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'devforge-cli-update-'));
+      let threw = false;
+      try {
+        await execAsync(`node "${cliPath}" update --dry-run`, {
+          env: { ...process.env, CI: 'true' },
+          cwd: tempDir,
+        } as any);
+      } catch (err: any) {
+        threw = true;
+        expect(err.code).toBe(1);
+      }
+      expect(threw).toBe(true);
+      await fs.rm(tempDir, { recursive: true, force: true });
     });
 
     it('invokes the CLI binary for audit (dry-run)', async () => {
+      const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'devforge-cli-audit-'));
       const { stdout, stderr } = await execAsync(`node "${cliPath}" audit`, {
         env: { ...process.env, CI: 'true' },
+        cwd: tempDir,
       } as any);
       expect(stderr).not.toMatch(/error/i);
+      await fs.rm(tempDir, { recursive: true, force: true });
     });
 
     it('invokes the CLI binary for preview (dry-run)', async () => {

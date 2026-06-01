@@ -28,6 +28,7 @@ export interface TemplateVariable {
  * Additional variables require explicit whitelisting
  */
 const ALLOWED_VARIABLES = new Set([
+  'devforgeVersion',
   'nodeVersion',
   'packageManager',
   'installCommand',

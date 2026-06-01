@@ -310,6 +310,7 @@ describe('Template Storage', () => {
     it('should use consistent variable naming', () => {
       const templates = Object.values(TEMPLATES);
       const allowedVars = [
+        'devforgeVersion',
         'nodeVersion',
         'packageManager',
         'installCommand',

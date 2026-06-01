@@ -4,10 +4,17 @@ import { Command } from 'commander';
 import { logger } from '../utils/logger';
 import { initCommand } from './initCommand';
 import { updateCommand } from './updateCommand';
+import { auditCommand } from './auditCommand';
 import { DevForgeFS } from '../utils/fs';
 import { listTransactionFiles, rollbackTransaction } from '../generator/transaction';
 
 const program = new Command();
+
+if (process.env.NODE_ENV === 'production' && !__dirname.includes('node_modules')) {
+  logger.warn(
+    'Package integrity check: DevForge is running outside node_modules in production. Verify the installation source.',
+  );
+}
 
 program
   .name('devforge')
@@ -20,12 +27,16 @@ program
   .option('--dry-run', 'Simulate generation without writing files')
   .option('--force-detect', 'Skip detection cache and re-detect project')
   .option('--preview', 'Show file previews before generating')
+  .option('--timing', 'Show per-phase timing information')
+  .option('--verbose', 'Alias for --timing')
   .action(async (options) => {
     try {
       await initCommand(process.cwd(), {
         dryRun: options.dryRun ?? false,
         forceDetect: options.forceDetect ?? false,
         preview: options.preview ?? false,
+        timing: options.timing ?? false,
+        verbose: options.verbose ?? false,
       });
     } catch (err) {
       logger.error('\n✗ DevForge initialization failed');
@@ -51,8 +62,15 @@ program
 program
   .command('audit')
   .description('Audit generated workflows for security misconfigurations')
-  .action(() => {
-    auditCommand();
+  .option('--fix', 'Show auto-fix stub message')
+  .action(async (options) => {
+    try {
+      await auditCommand(process.cwd(), { fix: Boolean(options.fix) });
+    } catch (err) {
+      logger.error(err instanceof Error ? err.message : String(err));
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(1);
+    }
   });
 
 program
@@ -97,12 +115,6 @@ program
       process.exit(1);
     }
   });
-
-// updateCommand is implemented in src/cli/updateCommand.ts
-
-function auditCommand(): void {
-  logger.warn('Command not yet implemented');
-}
 
 function previewCommand(): void {
   logger.warn('Command not yet implemented');

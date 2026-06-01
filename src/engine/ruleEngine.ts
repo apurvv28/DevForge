@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { DevForgeConfig, Framework, DeploymentTarget } from '../types';
+import { getTemplate } from '../templates';
 import { GeneratorError } from '../utils/errors';
 
 /**
@@ -29,6 +30,7 @@ export interface GenerationPlan {
   deploymentTarget: DeploymentTarget;
   generatedAt: string;
   devforgeVersion: string;
+  config?: DevForgeConfig;
 }
 
 /**
@@ -55,6 +57,7 @@ const AVAILABLE_TEMPLATES = new Set<string>([
 function buildBaseVariables(config: DevForgeConfig): TemplateVariable[] {
   const detected = config.detected;
   return [
+    { key: 'devforgeVersion', value: config.devforgeVersion },
     { key: 'nodeVersion', value: detected.nodeVersion },
     { key: 'installCommand', value: detected.installCommand },
     { key: 'buildCommand', value: detected.buildCommand || 'npm run build' },
@@ -213,7 +216,12 @@ function validateTemplateIds(files: PlannedFile[]): void {
  */
 function computePlanHash(files: PlannedFile[]): string {
   const filesSerialized = JSON.stringify(
-    files.map((f) => ({ path: f.path, templateId: f.templateId })),
+    files.map((file) => ({
+      path: file.path,
+      templateId: file.templateId,
+      variables: file.variables,
+      templateHash: createHash('sha256').update(getTemplate(file.templateId)).digest('hex'),
+    })),
     null,
     2,
   );
@@ -248,5 +256,6 @@ export function buildGenerationPlan(config: DevForgeConfig): GenerationPlan {
     deploymentTarget: config.user.deploymentTarget,
     generatedAt: new Date().toISOString(),
     devforgeVersion: config.devforgeVersion,
+    config,
   };
 }

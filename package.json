@@ -28,7 +28,7 @@
     "lint": "eslint src --ext .ts",
     "prepare": "husky install",
     "postinstall": "",
-    "prepublishOnly": "npm run lint && npm run test && npm run build",
+    "prepublishOnly": "npm run build && npm run lint && npm run test",
     "release": "semantic-release"
   },
   "save-exact": true,

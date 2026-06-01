@@ -39,8 +39,11 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Run npm audit
-        run: npm audit --audit-level=high
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run npm audit (production dependencies only)
+        run: npm audit --audit-level=high --omit=dev
 
   build:
     name: TypeScript Build

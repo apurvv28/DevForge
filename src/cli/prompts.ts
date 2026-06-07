@@ -98,30 +98,6 @@ export async function collectUserConfig(
 
   const enableTrivyScan: boolean = trivyAnswer.enableTrivyScan;
 
-  // Prompt for IaC tool when IaC is not detected or not deploy-ready
-  let iacTool: UserConfig['iacTool'] = undefined;
-  const needsIaCPrompt =
-    supportsIaCGeneration(deploymentTarget) &&
-    (!iacContext || !iacContext.detected || !iacContext.isDeployReady);
-
-  if (needsIaCPrompt) {
-    const iacAnswer = await inquirer.prompt([
-      {
-        type: 'list',
-        name: 'iacTool',
-        message: 'Which IaC tool do you want DevForge to generate?',
-        choices: [
-          { name: 'Terraform (recommended for AWS)', value: 'terraform' },
-          { name: 'AWS CDK (TypeScript)', value: 'cdk' },
-          { name: 'boto3 (Python)', value: 'boto3' },
-          { name: 'Skip IaC generation', value: 'skip' },
-        ],
-        default: 'terraform',
-      },
-    ]);
-    iacTool = iacAnswer.iacTool as UserConfig['iacTool'];
-  }
-
   // Prompt for environment names if multi-environment is enabled
   let environments: string[] = [];
   if (multiEnvironment) {
@@ -155,6 +131,30 @@ export async function collectUserConfig(
     if (environments.length === 0) {
       throw new ValidationError('At least one environment name must be provided');
     }
+  }
+
+  // Prompt for IaC tool when IaC is not detected or not deploy-ready
+  let iacTool: UserConfig['iacTool'] = undefined;
+  const needsIaCPrompt =
+    supportsIaCGeneration(deploymentTarget) &&
+    (!iacContext || !iacContext.detected || !iacContext.isDeployReady);
+
+  if (needsIaCPrompt) {
+    const iacAnswer = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'iacTool',
+        message: 'Which IaC tool do you want DevForge to generate?',
+        choices: [
+          { name: 'Terraform (recommended for AWS)', value: 'terraform' },
+          { name: 'AWS CDK (TypeScript)', value: 'cdk' },
+          { name: 'boto3 (Python)', value: 'boto3' },
+          { name: 'Skip IaC generation', value: 'skip' },
+        ],
+        default: 'terraform',
+      },
+    ]);
+    iacTool = iacAnswer?.iacTool as UserConfig['iacTool'];
   }
 
   // Assemble UserConfig

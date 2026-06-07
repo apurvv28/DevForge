@@ -1,28 +1,28 @@
 import { execFile } from 'child_process';
-import { promisify } from 'util';
 import { sanitizeString } from '../../utils/sanitizer';
 import { logger } from '../../utils/logger';
 import { TrivyScanResult } from './trivyTypes';
 
-const execFileAsync = promisify(execFile);
 const MAX_STDOUT_BYTES = 10 * 1024 * 1024; // 10 MB
 
 async function runTrivy(args: string[], timeoutMs: number): Promise<TrivyScanResult> {
-  const { stdout } = await execFileAsync('trivy', args, {
-    timeout: timeoutMs,
-    maxBuffer: MAX_STDOUT_BYTES,
+  return new Promise((resolve, reject) => {
+    execFile('trivy', args, { timeout: timeoutMs, maxBuffer: MAX_STDOUT_BYTES }, (err, stdout) => {
+      if (err) return reject(err);
+      resolve(JSON.parse(stdout) as TrivyScanResult);
+    });
   });
-  return JSON.parse(stdout) as TrivyScanResult;
 }
 
 export class TrivyRunner {
   async isAvailable(): Promise<boolean> {
-    try {
-      await execFileAsync('trivy', ['--version'], { timeout: 5000 });
-      return true;
-    } catch {
-      return false;
-    }
+    return new Promise((resolve) => {
+      try {
+        execFile('trivy', ['--version'], { timeout: 5000 }, (err) => resolve(!err));
+      } catch {
+        resolve(false);
+      }
+    });
   }
 
   async scanImage(imageName: string): Promise<TrivyScanResult> {

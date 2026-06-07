@@ -45,6 +45,13 @@ const ALLOWED_VARIABLES = new Set([
   'ECR_REGISTRY',
   'IMAGE_NAME',
   'TRIVY_EXIT_CODE',
+  // EKS variables
+  'EKS_CLUSTER_NAME',
+  'AWS_REGION',
+  'APP_NAME',
+  'REPLICAS',
+  'PORT',
+  'DOMAIN',
 ]);
 
 /**

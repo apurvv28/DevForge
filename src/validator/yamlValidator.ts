@@ -161,4 +161,94 @@ export function validateAllFiles(
   return map;
 }
 
-export default { validateWorkflowYaml, validateAllFiles };
+/**
+ * Validates a Kubernetes manifest (Deployment, Service, or Ingress).
+ * Performs structural checks specific to each kind.
+ */
+export function validateK8sManifest(content: string, filePath?: string): ValidationResult {
+  const result = makeResult();
+  void filePath;
+
+  let doc: unknown;
+  try {
+    doc = load(content);
+  } catch (err) {
+    const maybeErr = err as { mark?: { line?: number }; message?: string } | undefined;
+    const line = maybeErr?.mark?.line != null ? maybeErr.mark.line + 1 : undefined;
+    result.valid = false;
+    result.errors.push({ code: 'SYNTAX_ERROR', message: String(maybeErr?.message ?? err), line });
+    return result;
+  }
+
+  if (!doc || typeof doc !== 'object') {
+    result.valid = false;
+    result.errors.push({ code: 'INVALID_YAML_ROOT', message: 'YAML root must be a mapping/object' });
+    return result;
+  }
+
+  const obj = doc as Record<string, unknown>;
+
+  // Every k8s manifest must have apiVersion, kind, metadata
+  for (const field of ['apiVersion', 'kind', 'metadata'] as const) {
+    if (!Object.prototype.hasOwnProperty.call(obj, field)) {
+      result.valid = false;
+      result.errors.push({
+        code: 'MISSING_K8S_FIELD',
+        message: `Kubernetes manifest is missing required field: ${field}`,
+      });
+    }
+  }
+
+  if (result.errors.length > 0) return result;
+
+  const kind = obj['kind'] as string;
+
+  if (kind === 'Deployment') {
+    const spec = obj['spec'] as Record<string, unknown> | undefined;
+    if (!spec) {
+      result.valid = false;
+      result.errors.push({ code: 'MISSING_K8S_FIELD', message: 'Deployment is missing spec' });
+      return result;
+    }
+
+    const selector = spec['selector'] as Record<string, unknown> | undefined;
+    const template = spec['template'] as Record<string, unknown> | undefined;
+    const templateMeta = template?.['metadata'] as Record<string, unknown> | undefined;
+    const matchLabels = selector?.['matchLabels'] as Record<string, unknown> | undefined;
+    const templateLabels = templateMeta?.['labels'] as Record<string, unknown> | undefined;
+
+    if (!selector || !matchLabels) {
+      result.valid = false;
+      result.errors.push({
+        code: 'MISSING_K8S_FIELD',
+        message: 'Deployment spec.selector.matchLabels is required',
+      });
+    }
+
+    if (!template || !templateLabels) {
+      result.valid = false;
+      result.errors.push({
+        code: 'MISSING_K8S_FIELD',
+        message: 'Deployment spec.template.metadata.labels is required',
+      });
+    }
+
+    // Verify selector.matchLabels keys are a subset of template.metadata.labels
+    if (matchLabels && templateLabels) {
+      for (const key of Object.keys(matchLabels)) {
+        if (!Object.prototype.hasOwnProperty.call(templateLabels, key)) {
+          result.valid = false;
+          result.errors.push({
+            code: 'SELECTOR_LABEL_MISMATCH',
+            message: `spec.selector.matchLabels key "${key}" not found in spec.template.metadata.labels`,
+          });
+        }
+      }
+    }
+  }
+
+  if (result.errors.length > 0) result.valid = false;
+  return result;
+}
+
+export default { validateWorkflowYaml, validateAllFiles, validateK8sManifest };

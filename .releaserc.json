@@ -8,7 +8,8 @@
         "preset": "conventionalcommits",
         "releaseRules": [
           { "type": "feat", "release": "minor" },
-          { "type": "fix", "release": "patch" }
+          { "type": "fix", "release": "patch" },
+          { "breaking": true, "release": "major" }
         ]
       }
     ],
@@ -22,7 +23,14 @@
     [
       "@semantic-release/npm",
       {
-        "npmPublish": false
+        "npmPublish": true
+      }
+    ],
+    "@semantic-release/github",
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "echo 'v2 release'"
       }
     ],
     [

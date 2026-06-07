@@ -1,16 +1,22 @@
 import { AgentProviderName } from './providers/types';
 
-const PROVIDER_LABELS: Record<AgentProviderName, string> = {
-  'nova-pro': 'Amazon Nova Pro',
-  gemini: 'Google Gemini',
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-  bedrock: 'Amazon Bedrock',
-  offline: 'Offline',
-};
-
 export function formatProviderName(provider: AgentProviderName): string {
-  return PROVIDER_LABELS[provider];
+  switch (provider) {
+    case 'nova-pro':
+      return 'Amazon Nova Pro';
+    case 'gemini':
+      return 'Google Gemini';
+    case 'openai':
+      return 'OpenAI';
+    case 'anthropic':
+      return 'Anthropic';
+    case 'bedrock':
+      return 'Amazon Bedrock';
+    case 'offline':
+      return 'Offline';
+    default:
+      return 'Unknown provider';
+  }
 }
 
 export function getProviderMode(provider: AgentProviderName): string {

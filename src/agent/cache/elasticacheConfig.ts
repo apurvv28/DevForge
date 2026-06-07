@@ -15,9 +15,76 @@ export function isElasticacheCredentialKey(key: string): boolean {
   return ELASTICACHE_CREDENTIAL_KEYS.has(key);
 }
 
-function readEnv(name: string): string | undefined {
-  const value = process.env[name]?.trim();
-  return value && value.length > 0 ? value : undefined;
+type ElasticacheEnvKey =
+  | 'DEVFORGE_ELASTICACHE_ENABLED'
+  | 'DEVFORGE_ELASTICACHE_HOST'
+  | 'DEVFORGE_ELASTICACHE_PORT'
+  | 'DEVFORGE_ELASTICACHE_AUTH_TOKEN'
+  | 'DEVFORGE_ELASTICACHE_TLS'
+  | 'DEVFORGE_ELASTICACHE_KEY_PREFIX'
+  | 'ELASTICACHE_ENDPOINT';
+
+function readEnv(name: ElasticacheEnvKey): string | undefined {
+  switch (name) {
+    case 'DEVFORGE_ELASTICACHE_ENABLED':
+      return envValue(name);
+    case 'DEVFORGE_ELASTICACHE_HOST':
+      return envValue(name);
+    case 'DEVFORGE_ELASTICACHE_PORT':
+      return envValue(name);
+    case 'DEVFORGE_ELASTICACHE_AUTH_TOKEN':
+      return envValue(name);
+    case 'DEVFORGE_ELASTICACHE_TLS':
+      return envValue(name);
+    case 'DEVFORGE_ELASTICACHE_KEY_PREFIX':
+      return envValue(name);
+    case 'ELASTICACHE_ENDPOINT':
+      return envValue(name);
+    default:
+      return undefined;
+  }
+}
+
+function envValue(key: ElasticacheEnvKey): string | undefined {
+  switch (key) {
+    case 'DEVFORGE_ELASTICACHE_ENABLED':
+      return trimEnv('DEVFORGE_ELASTICACHE_ENABLED');
+    case 'DEVFORGE_ELASTICACHE_HOST':
+      return trimEnv('DEVFORGE_ELASTICACHE_HOST');
+    case 'DEVFORGE_ELASTICACHE_PORT':
+      return trimEnv('DEVFORGE_ELASTICACHE_PORT');
+    case 'DEVFORGE_ELASTICACHE_AUTH_TOKEN':
+      return trimEnv('DEVFORGE_ELASTICACHE_AUTH_TOKEN');
+    case 'DEVFORGE_ELASTICACHE_TLS':
+      return trimEnv('DEVFORGE_ELASTICACHE_TLS');
+    case 'DEVFORGE_ELASTICACHE_KEY_PREFIX':
+      return trimEnv('DEVFORGE_ELASTICACHE_KEY_PREFIX');
+    case 'ELASTICACHE_ENDPOINT':
+      return trimEnv('ELASTICACHE_ENDPOINT');
+    default:
+      return undefined;
+  }
+}
+
+function trimEnv(name: ElasticacheEnvKey): string | undefined {
+  switch (name) {
+    case 'DEVFORGE_ELASTICACHE_ENABLED':
+      return process.env.DEVFORGE_ELASTICACHE_ENABLED?.trim();
+    case 'DEVFORGE_ELASTICACHE_HOST':
+      return process.env.DEVFORGE_ELASTICACHE_HOST?.trim();
+    case 'DEVFORGE_ELASTICACHE_PORT':
+      return process.env.DEVFORGE_ELASTICACHE_PORT?.trim();
+    case 'DEVFORGE_ELASTICACHE_AUTH_TOKEN':
+      return process.env.DEVFORGE_ELASTICACHE_AUTH_TOKEN?.trim();
+    case 'DEVFORGE_ELASTICACHE_TLS':
+      return process.env.DEVFORGE_ELASTICACHE_TLS?.trim();
+    case 'DEVFORGE_ELASTICACHE_KEY_PREFIX':
+      return process.env.DEVFORGE_ELASTICACHE_KEY_PREFIX?.trim();
+    case 'ELASTICACHE_ENDPOINT':
+      return process.env.ELASTICACHE_ENDPOINT?.trim();
+    default:
+      return undefined;
+  }
 }
 
 function parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
@@ -63,16 +130,9 @@ export function resolveElastiCacheConfig(
     return null;
   }
 
-  const port = parsePort(
-    readEnv('DEVFORGE_ELASTICACHE_PORT') ?? stored.ELASTICACHE_PORT,
-    6379,
-  );
-  const authToken =
-    readEnv('DEVFORGE_ELASTICACHE_AUTH_TOKEN') ?? stored.ELASTICACHE_AUTH_TOKEN;
-  const tls = parseBoolean(
-    readEnv('DEVFORGE_ELASTICACHE_TLS') ?? stored.ELASTICACHE_TLS,
-    true,
-  );
+  const port = parsePort(readEnv('DEVFORGE_ELASTICACHE_PORT') ?? stored.ELASTICACHE_PORT, 6379);
+  const authToken = readEnv('DEVFORGE_ELASTICACHE_AUTH_TOKEN') ?? stored.ELASTICACHE_AUTH_TOKEN;
+  const tls = parseBoolean(readEnv('DEVFORGE_ELASTICACHE_TLS') ?? stored.ELASTICACHE_TLS, true);
   const keyPrefix = sanitizeString(
     readEnv('DEVFORGE_ELASTICACHE_KEY_PREFIX') ??
       stored.ELASTICACHE_KEY_PREFIX ??

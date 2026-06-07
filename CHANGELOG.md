@@ -1,5 +1,16 @@
 # 2.1.0 (2026-06-07)
 
+## v2.0.0 — Agentic Edition
+
+- Multi-LLM provider support (Amazon Nova Pro, Gemini, OpenAI, Anthropic, Bedrock)
+- Recommendation Agent (auto-invoked on init)
+- Security & Compliance Agent (NIST SP 800-53 / ISO 27001)
+- Python framework support (FastAPI, Django, Flask)
+- Amazon EKS and ECS deployment targets
+- Jenkins CI integration
+- Agent memory with Amazon Elastic
+- Automated Pipeline Execution Engine
+
 ### Features
 
 * **agent-graph:** LangGraph orchestration for init, diagnose, and security remediation loops
@@ -89,6 +100,17 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## v2.0.0 — Agentic Edition
+
+- Multi-LLM provider support (Amazon Nova Pro, Gemini, OpenAI, Anthropic, Bedrock)
+- Recommendation Agent (auto-invoked on init)
+- Security & Compliance Agent (NIST SP 800-53 / ISO 27001)
+- Python framework support (FastAPI, Django, Flask)
+- Amazon EKS and ECS deployment targets
+- Jenkins CI integration
+- Agent memory with Amazon Elastic
+- Automated Pipeline Execution Engine
 
 ## [1.0.0] - 2026-06-01
 

@@ -83,8 +83,10 @@ export async function initCommand(
       process.env.CI === 'true'
         ? getDefaultUserConfig(detected)
         : timingEnabled
-          ? await measure('Prompts', () => collectUserConfig(detected))
-          : await collectUserConfig(detected);
+          ? await measure('Prompts', () =>
+              collectUserConfig(detected, undefined, activeCredentials),
+            )
+          : await collectUserConfig(detected, undefined, activeCredentials);
 
     // Step 3: Build Generation Plan
     logger.info('[3/6] Building generation plan...');

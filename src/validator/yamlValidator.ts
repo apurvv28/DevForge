@@ -97,19 +97,19 @@ export function validateWorkflowYaml(content: string, _filePath?: string): Valid
 
   // HARDCODED_CREDENTIAL: lines like 'token: abc...' or 'password: xyz...'
   const lines = content.split(/\r?\n/);
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (const [index, line] of lines.entries()) {
     if (!line) continue;
     const match = line.match(/\b(password|token)\b\s*:\s*(.+)/i);
     if (match) {
-      const value = (match[2] || '').trim();
+      const rawValue = match[2] || '';
+      const value = rawValue.trim();
       // If value contains a templated secrets reference, it's okay
       if (!/\$\{\{\s*secrets\./.test(value) && !/\$\{\{/.test(value)) {
         result.valid = false;
         result.errors.push({
           code: 'HARDCODED_CREDENTIAL',
-          message: `Hardcoded credential detected on line ${i + 1}`,
-          line: i + 1,
+          message: `Hardcoded credential detected on line ${index + 1}`,
+          line: index + 1,
         });
       }
     }
@@ -182,7 +182,10 @@ export function validateK8sManifest(content: string, filePath?: string): Validat
 
   if (!doc || typeof doc !== 'object') {
     result.valid = false;
-    result.errors.push({ code: 'INVALID_YAML_ROOT', message: 'YAML root must be a mapping/object' });
+    result.errors.push({
+      code: 'INVALID_YAML_ROOT',
+      message: 'YAML root must be a mapping/object',
+    });
     return result;
   }
 

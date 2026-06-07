@@ -1,10 +1,10 @@
-import { mkdir, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 import { ElastiCacheBackend } from '../cache/ElastiCacheBackend';
 import { resolveElastiCacheConfig } from '../cache/elasticacheConfig';
 import { StoredCredentials } from '../credentials/types';
 import { resolveGraphCheckpointPath } from './GraphMemory';
 import { DevForgeGraphState } from './types';
+import { safeReadFile, safeWriteFile, safeMkdir } from '../../utils/safeFs';
 
 type CheckpointStore = Record<string, DevForgeGraphState>;
 
@@ -29,29 +29,35 @@ export class LocalFileGraphCheckpointer {
 
   async save(namespace: string, state: DevForgeGraphState): Promise<void> {
     const store = await this.readStore();
-    // eslint-disable-next-line security/detect-object-injection
-    store[namespace] = state;
-    await mkdir(path.dirname(this.filePath), { recursive: true });
-    await writeFile(this.filePath, JSON.stringify(store, null, 2), 'utf-8');
+    const namespaceKey = String(namespace);
+    const updatedStore = {
+      ...store,
+      [namespaceKey]: state,
+    };
+    await safeMkdir(path.dirname(this.filePath));
+    await safeWriteFile(this.filePath, JSON.stringify(updatedStore, null, 2), 'utf-8');
   }
 
   async load(namespace: string): Promise<DevForgeGraphState | null> {
     const store = await this.readStore();
-    // eslint-disable-next-line security/detect-object-injection
-    return store[namespace] ?? null;
+    const namespaceKey = String(namespace);
+    const { [namespaceKey]: result } = store;
+    return result ?? null;
   }
 
   async clear(namespace: string): Promise<void> {
     const store = await this.readStore();
-    // eslint-disable-next-line security/detect-object-injection
-    delete store[namespace];
-    await mkdir(path.dirname(this.filePath), { recursive: true });
-    await writeFile(this.filePath, JSON.stringify(store, null, 2), 'utf-8');
+    const namespaceKey = String(namespace);
+    const remaining = Object.fromEntries(
+      Object.entries(store).filter(([key]) => key !== namespaceKey),
+    );
+    await safeMkdir(path.dirname(this.filePath));
+    await safeWriteFile(this.filePath, JSON.stringify(remaining, null, 2), 'utf-8');
   }
 
   private async readStore(): Promise<CheckpointStore> {
     try {
-      const raw = await readFile(this.filePath, 'utf-8');
+      const raw = await safeReadFile(this.filePath, 'utf-8');
       return JSON.parse(raw) as CheckpointStore;
     } catch {
       return {};
@@ -113,10 +119,7 @@ export class CompositeGraphCheckpointer {
   ) {}
 
   async save(namespace: string, state: DevForgeGraphState): Promise<void> {
-    await Promise.all([
-      this.primary.save(namespace, state),
-      this.fallback.save(namespace, state),
-    ]);
+    await Promise.all([this.primary.save(namespace, state), this.fallback.save(namespace, state)]);
   }
 
   async load(namespace: string): Promise<DevForgeGraphState | null> {

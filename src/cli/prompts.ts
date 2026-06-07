@@ -7,6 +7,9 @@ import {
   UserConfig,
   UserConfigSchema,
 } from '../types';
+import { StoredCredentials } from '../agent/credentials/types';
+import ElasticMemoryStore from '../agent/memory/ElasticMemoryStore';
+import { deriveProjectKey } from '../agent/memory/projectKey';
 import { sanitizeString, validateEnum } from '../utils/sanitizer';
 import { ValidationError } from '../utils/errors';
 import { logger } from '../utils/logger';
@@ -21,6 +24,7 @@ import { IaCDetectionResult } from '../types';
 export async function collectUserConfig(
   detected: DetectedProject,
   iacContext?: IaCDetectionResult,
+  storedCredentials?: StoredCredentials | null,
 ): Promise<UserConfig> {
   // Determine default deployment target based on detected framework
   let defaultTarget = DeploymentTarget.DOCKER;
@@ -28,6 +32,27 @@ export async function collectUserConfig(
     defaultTarget = DeploymentTarget.VERCEL;
   } else if (detected.framework === 'express' || detected.framework === 'nestjs') {
     defaultTarget = DeploymentTarget.RAILWAY;
+  }
+
+  // Pre-fill from stored user preferences if available
+  try {
+    if (ElasticMemoryStore.isConfiguredFromCredentials(storedCredentials?.credentials)) {
+      const url = String(storedCredentials!.credentials.ELASTICSEARCH_URL);
+      const key = String(storedCredentials!.credentials.ELASTICSEARCH_API_KEY);
+      const store = new ElasticMemoryStore(url, key);
+      const projectKey = deriveProjectKey();
+      const prefs = await store.retrieve(projectKey, 'DevForgeCLI', 1).catch(() => []);
+      const firstPref = prefs[0];
+      if (firstPref?.data) {
+        const data = firstPref.data;
+        const deploymentTarget = data.deploymentTarget;
+        if (typeof deploymentTarget === 'string') {
+          defaultTarget = deploymentTarget as DeploymentTarget;
+        }
+      }
+    }
+  } catch {
+    // ignore prefill errors
   }
 
   // Prompt for deployment target
@@ -180,6 +205,31 @@ export async function collectUserConfig(
 
   // Print confirmation summary
   printConfigSummary(userConfig);
+
+  // Store user preferences to memory (best-effort)
+  try {
+    if (ElasticMemoryStore.isConfiguredFromCredentials(storedCredentials?.credentials)) {
+      const url = String(storedCredentials!.credentials.ELASTICSEARCH_URL);
+      const key = String(storedCredentials!.credentials.ELASTICSEARCH_API_KEY);
+      const store = new ElasticMemoryStore(url, key);
+      const projectKey = deriveProjectKey();
+      const mem = {
+        projectKey,
+        timestamp: new Date().toISOString(),
+        agentName: 'DevForgeCLI',
+        memoryType: 'user_preference' as const,
+        data: {
+          deploymentTarget: userConfig.deploymentTarget,
+          branchStrategy: userConfig.branchStrategy,
+          dockerRequired: userConfig.dockerRequired,
+        },
+        ttlDays: 90,
+      };
+      await store.store(mem).catch(() => undefined);
+    }
+  } catch {
+    // ignore
+  }
 
   return validationResult.data;
 }

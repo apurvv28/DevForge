@@ -1,12 +1,7 @@
-import { access, mkdir, readFile, writeFile } from 'fs/promises';
 import os from 'os';
 import path from 'path';
-import {
-  AgentCacheFile,
-  AgentCacheOptions,
-  CacheBackend,
-  DEFAULT_CACHE_TTL_MS,
-} from './types';
+import { safeAccess, safeMkdir, safeReadFile, safeWriteFile } from '../../utils/safeFs';
+import { AgentCacheFile, AgentCacheOptions, CacheBackend, DEFAULT_CACHE_TTL_MS } from './types';
 
 function getDefaultCachePath(): string {
   if (process.env.DEVFORGE_AGENT_CACHE_PATH) {
@@ -16,7 +11,10 @@ function getDefaultCachePath(): string {
   return path.join(os.homedir(), '.devforge', 'agent-cache.json');
 }
 
-function isEntryValid(entry: { createdAt: number; ttlMs: number }, now: number = Date.now()): boolean {
+function isEntryValid(
+  entry: { createdAt: number; ttlMs: number },
+  now: number = Date.now(),
+): boolean {
   const ageMs = now - entry.createdAt;
   return ageMs >= 0 && ageMs < entry.ttlMs;
 }
@@ -75,29 +73,26 @@ export class LocalFileCache implements CacheBackend {
 
     let fileSizeBytes = 0;
     try {
-      const raw = await readFile(this.cachePath, 'utf-8');
+      const raw = await safeReadFile(this.cachePath, 'utf-8');
       fileSizeBytes = Buffer.byteLength(raw, 'utf8');
     } catch {
       fileSizeBytes = 0;
     }
 
     const oldestTimestamp =
-      validEntries.length > 0
-        ? Math.min(...validEntries.map((entry) => entry.createdAt))
-        : null;
+      validEntries.length > 0 ? Math.min(...validEntries.map((entry) => entry.createdAt)) : null;
 
     return {
       entryCount: validEntries.length,
       totalSizeKb: Math.round((fileSizeBytes / 1024) * 100) / 100,
-      oldestEntryDate:
-        oldestTimestamp === null ? null : new Date(oldestTimestamp).toISOString(),
+      oldestEntryDate: oldestTimestamp === null ? null : new Date(oldestTimestamp).toISOString(),
     };
   }
 
   private async load(): Promise<AgentCacheFile> {
     try {
-      await access(this.cachePath);
-      const raw = await readFile(this.cachePath, 'utf-8');
+      await safeAccess(this.cachePath);
+      const raw = await safeReadFile(this.cachePath, 'utf-8');
       const parsed = JSON.parse(raw) as AgentCacheFile;
 
       if (!parsed.entries || !Array.isArray(parsed.entries)) {
@@ -111,14 +106,13 @@ export class LocalFileCache implements CacheBackend {
   }
 
   private async persist(file: AgentCacheFile): Promise<void> {
-    await mkdir(path.dirname(this.cachePath), { recursive: true });
-
+    await safeMkdir(path.dirname(this.cachePath));
     const payload = JSON.stringify(file, null, 2);
     const maxAttempts = 5;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
-        await writeFile(this.cachePath, payload, 'utf-8');
+        await safeWriteFile(this.cachePath, payload, 'utf-8');
         return;
       } catch (error) {
         const code = (error as NodeJS.ErrnoException).code;

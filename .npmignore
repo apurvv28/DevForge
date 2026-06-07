@@ -9,3 +9,8 @@ jest.config.ts
 coverage/
 *.test.ts
 .devforge/
+
+tests/fixtures/
+benchmarks/
+scripts/
+docs/internal/

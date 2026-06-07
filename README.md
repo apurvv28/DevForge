@@ -5,9 +5,17 @@
 [![ci](https://img.shields.io/github/actions/workflow/status/OWNER/REPO/ci.yml?branch=main)](.github/workflows/ci.yml)
 [![release](https://img.shields.io/github/actions/workflow/status/OWNER/REPO/release.yml?branch=main)](.github/workflows/release.yml)
 
-Production-ready CI/CD pipelines in one command. No AI. No cloud. No config.
+Production-ready CI/CD pipelines, now with AI-powered recommendations.
 
 For command details, see [docs/COMMANDS.md](docs/COMMANDS.md).
+
+## AI Features
+
+- ✦ Automatic LLM provider setup for Amazon Nova Pro, Gemini, OpenAI, Anthropic, and Bedrock.
+- ✦ Recommendation Agent — runs on every init and flags pipeline issues.
+- ✦ Security & Compliance Agent — NIST SP 800-53 + ISO 27001 scanning.
+- ✦ Cross-session memory via Amazon Elastic.
+- ✦ Full offline mode — AI is optional and the v1 engine always works.
 
 ## Problem
 
@@ -18,8 +26,8 @@ For command details, see [docs/COMMANDS.md](docs/COMMANDS.md).
 ## Quick Start
 
 1. Run `npx devforge init`.
-2. DevForge detects your framework, package manager, and deployment target.
-3. Review the detected configuration and choose your deployment options.
+2. Choose your LLM provider or offline mode and confirm deployment options.
+3. DevForge detects your framework, package manager, and deployment target.
 4. Preview the generated workflows if you want a before/after diff.
 5. Generate the files and commit them to your repository.
 
@@ -28,11 +36,13 @@ For command details, see [docs/COMMANDS.md](docs/COMMANDS.md).
 | Feature | DevForge | Yeoman | Workik AI | Actions Importer |
 | --- | --- | --- | --- | --- |
 | Local project detection | Yes | Limited | No | No |
+| AI Recommendations | ✓ (DevForge) | — | ✓ (Workik) | — |
+| Compliance Scanning | ✓ | — | — | — |
+| Offline Mode | ✓ | ✓ | — | ✓ |
 | One command setup | Yes | Yes | Yes | No |
 | Deployment provider support | Yes | Via generators | Partial | Limited |
 | Docker generation | Yes | Via generators | Yes | No |
 | Secret guidance | Yes | No | Partial | No |
-| Works offline | Yes | Yes | No | No |
 | Dry run mode | Yes | Depends | Partial | No |
 | Update command | Yes | No | No | No |
 | Audit mode | Yes | No | No | No |
@@ -48,6 +58,9 @@ For command details, see [docs/COMMANDS.md](docs/COMMANDS.md).
 [![NestJS](https://img.shields.io/badge/NestJS-supported-ea285f)](#)
 [![Vue](https://img.shields.io/badge/Vue-supported-42b883)](#)
 [![Angular](https://img.shields.io/badge/Angular-supported-dd0031)](#)
+[![FastAPI](https://img.shields.io/badge/FastAPI-supported-009688)](#)
+[![Django](https://img.shields.io/badge/Django-supported-092E20)](#)
+[![Flask](https://img.shields.io/badge/Flask-supported-000000)](#)
 
 ## Supported Deployment Targets
 
@@ -61,6 +74,13 @@ For command details, see [docs/COMMANDS.md](docs/COMMANDS.md).
 | AWS EKS | ✓ generate + execute | Terraform |
 | AWS EC2 | ✓ generate + execute | Terraform, boto3 |
 | Docker | ✓ generate + execute | Terraform |
+
+## Supported CI
+
+- GitHub Actions
+- Jenkins
+- GitLab CI
+- CircleCI
 
 ## Commands
 
@@ -97,7 +117,7 @@ DevForge is designed to stay deterministic and reviewable:
 
 ## Docs
 
-See [docs/COMMANDS.md](docs/COMMANDS.md) for the full command reference, [docs/SECURITY.md](docs/SECURITY.md) for the user-facing security model, and [docs/IAC.md](docs/IAC.md) for IaC detection, generation, and verification.
+See [docs/COMMANDS.md](docs/COMMANDS.md) for the full command reference, [docs/AGENT.md](docs/AGENT.md) for the agent model, [docs/SECURITY_COMPLIANCE.md](docs/SECURITY_COMPLIANCE.md) for compliance scanning, and [docs/IAC.md](docs/IAC.md) for IaC detection, generation, and verification.
 
 ## Contributing
 

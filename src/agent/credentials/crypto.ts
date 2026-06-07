@@ -1,10 +1,6 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  pbkdf2Sync,
-  randomBytes,
-} from 'crypto';
+import { createCipheriv, createDecipheriv, pbkdf2Sync, randomBytes } from 'crypto';
 import os from 'os';
+import { isKnownCredentialKey } from './credentialKeyWhitelist';
 
 const ALGORITHM = 'aes-256-gcm';
 const SALT = 'devforge-v2';
@@ -27,11 +23,9 @@ export function encryptCredentials(
   const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
   const authTag = cipher.getAuthTag();
 
-  return [
-    iv.toString('base64'),
-    authTag.toString('base64'),
-    encrypted.toString('base64'),
-  ].join(':');
+  return [iv.toString('base64'), authTag.toString('base64'), encrypted.toString('base64')].join(
+    ':',
+  );
 }
 
 export function decryptCredentials(
@@ -50,9 +44,7 @@ export function decryptCredentials(
   const decipher = createDecipheriv(ALGORITHM, key, iv);
   decipher.setAuthTag(authTag);
 
-  const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString(
-    'utf8',
-  );
+  const decrypted = Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
   const parsed: unknown = JSON.parse(decrypted);
 
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
@@ -61,11 +53,71 @@ export function decryptCredentials(
 
   const record: Record<string, string> = {};
   for (const [field, value] of Object.entries(parsed)) {
+    if (!isKnownCredentialKey(field)) {
+      continue;
+    }
     if (typeof value !== 'string') {
       throw new Error(`Decrypted credential "${field}" is not a string`);
     }
-    record[field] = value;
+
+    assignDecryptedCredential(record, field, value);
   }
 
   return record;
+}
+
+function assignDecryptedCredential(
+  record: Record<string, string>,
+  field: string,
+  value: string,
+): void {
+  switch (field) {
+    case 'AWS_ACCESS_KEY_ID':
+      record.AWS_ACCESS_KEY_ID = value;
+      break;
+    case 'AWS_SECRET_ACCESS_KEY':
+      record.AWS_SECRET_ACCESS_KEY = value;
+      break;
+    case 'AWS_REGION':
+      record.AWS_REGION = value;
+      break;
+    case 'BEDROCK_MODEL_ID':
+      record.BEDROCK_MODEL_ID = value;
+      break;
+    case 'OPENAI_API_KEY':
+      record.OPENAI_API_KEY = value;
+      break;
+    case 'ANTHROPIC_API_KEY':
+      record.ANTHROPIC_API_KEY = value;
+      break;
+    case 'GEMINI_API_KEY':
+      record.GEMINI_API_KEY = value;
+      break;
+    case 'ELASTICSEARCH_URL':
+      record.ELASTICSEARCH_URL = value;
+      break;
+    case 'ELASTICSEARCH_API_KEY':
+      record.ELASTICSEARCH_API_KEY = value;
+      break;
+    case 'ELASTICACHE_ENABLED':
+      record.ELASTICACHE_ENABLED = value;
+      break;
+    case 'ELASTICACHE_HOST':
+      record.ELASTICACHE_HOST = value;
+      break;
+    case 'ELASTICACHE_PORT':
+      record.ELASTICACHE_PORT = value;
+      break;
+    case 'ELASTICACHE_AUTH_TOKEN':
+      record.ELASTICACHE_AUTH_TOKEN = value;
+      break;
+    case 'ELASTICACHE_TLS':
+      record.ELASTICACHE_TLS = value;
+      break;
+    case 'ELASTICACHE_KEY_PREFIX':
+      record.ELASTICACHE_KEY_PREFIX = value;
+      break;
+    default:
+      break;
+  }
 }

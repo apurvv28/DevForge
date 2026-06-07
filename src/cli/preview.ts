@@ -92,10 +92,9 @@ function formatPreview(
   lines.push('');
 
   // Files
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
+  for (const [index, file] of files.entries()) {
     if (!file) continue;
-    lines.push(chalk.bold(chalk.cyan(`📄 ${i + 1}. ${file.path}`)));
+    lines.push(chalk.bold(chalk.cyan(`📄 ${index + 1}. ${file.path}`)));
     lines.push(chalk.gray('─'.repeat(50)));
     lines.push(formatFileContent(file.content));
     lines.push('');
@@ -115,16 +114,16 @@ function formatFileContent(content: string): string {
 
   if (lines.length <= maxLines) {
     // Show all lines with line numbers
-    for (let i = 0; i < lines.length; i++) {
-      const lineNum = String(i + 1).padStart(3);
+    for (const [index, line] of lines.entries()) {
+      const lineNum = String(index + 1).padStart(3);
       // Keep line numbers as plain text (no color) so tests can assert on raw output
-      formatted += `${lineNum} │ ` + lines[i] + '\n';
+      formatted += `${lineNum} │ ${line}\n`;
     }
   } else {
     // Show first 20 lines with indicator of truncation
-    for (let i = 0; i < maxLines; i++) {
-      const lineNum = String(i + 1).padStart(3);
-      formatted += `${lineNum} │ ` + lines[i] + '\n';
+    for (const [index, line] of lines.slice(0, maxLines).entries()) {
+      const lineNum = String(index + 1).padStart(3);
+      formatted += `${lineNum} │ ${line}\n`;
     }
     formatted += chalk.yellow(`\n... and ${lines.length - maxLines} more lines\n`);
   }

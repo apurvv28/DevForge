@@ -41,6 +41,14 @@ export function renderExpectedOutputReport(result: AgentResult, config: DevForge
   const outputs = resolveExpectedOutputs(result, config);
   const sections: string[] = [renderOutputTable(outputs)];
 
+  // Include cross-session change summary if present in agent messages
+  const changeMsg = result.messages?.find(
+    (m) => m.type === 'info' && m.text?.startsWith('Changes since last scan'),
+  );
+  if (changeMsg) {
+    sections.unshift(changeMsg.text);
+  }
+
   const criticalSection = renderCriticalRecommendations(result);
   if (criticalSection) {
     sections.push(criticalSection);

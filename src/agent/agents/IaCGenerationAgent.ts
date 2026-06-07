@@ -5,12 +5,7 @@ import { StoredCredentials } from '../credentials/types';
 import { AgentFallbackError } from '../errors';
 import { LLMProvider } from '../providers/types';
 import { AgentContext, AgentResult } from '../types';
-import {
-  DeploymentTarget,
-  Framework,
-  IaCGenerationOutput,
-  IaCGeneratedFile,
-} from '../../types';
+import { DeploymentTarget, Framework, IaCGenerationOutput, IaCGeneratedFile } from '../../types';
 import {
   getIaCBlocks,
   getInstallInstructions,
@@ -43,11 +38,7 @@ const IaCGenerationOutputSchema = z.object({
 export class IaCGenerationAgent extends BaseAgent {
   readonly agentName = 'IaCGenerationAgent';
 
-  constructor(
-    provider: LLMProvider,
-    storedCredentials: StoredCredentials,
-    cache?: AgentCache,
-  ) {
+  constructor(provider: LLMProvider, storedCredentials: StoredCredentials, cache?: AgentCache) {
     super(provider, SYSTEM_PROMPT, storedCredentials, cache ?? new AgentCache());
   }
 
@@ -107,7 +98,8 @@ export class IaCGenerationAgent extends BaseAgent {
     } as AgentResult & { iacOutput: IaCGenerationOutput };
   }
 
-  protected fallback(_context: AgentContext): AgentResult {
+  protected fallback(context: AgentContext): AgentResult {
+    void context;
     return {
       agentName: this.agentName,
       success: false,

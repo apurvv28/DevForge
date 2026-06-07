@@ -31,8 +31,7 @@ export async function rollbackTransaction(fs: DevForgeFS, txPath: string): Promi
   if (!tx || !tx.transaction) throw new Error('Invalid transaction file');
 
   // Apply actions in reverse order
-  for (let i = tx.transaction.length - 1; i >= 0; i--) {
-    const entry = tx.transaction[i];
+  for (const entry of tx.transaction.slice().reverse()) {
     if (!entry) continue;
     try {
       if (entry.action === 'backup') {

@@ -1,10 +1,10 @@
 import { execFile as execFileCb } from 'child_process';
 import { promisify } from 'util';
-import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 import { randomUUID } from 'crypto';
 import { IaCGenerationOutput, IaCVerifyResult, IaCVerifyError } from '../types';
+import { safeMkdir, safeWriteFile, safeRm } from '../utils/safeFs';
 import { logger } from '../utils/logger';
 
 const execFile = promisify(execFileCb);
@@ -31,13 +31,13 @@ export class IaCVerifier {
 
   static async createTempDir(): Promise<string> {
     const dir = path.join(os.tmpdir(), `devforge-iac-verify-${randomUUID()}`);
-    await fs.mkdir(dir, { recursive: true });
+    await safeMkdir(dir);
     return dir;
   }
 
   static async cleanupTempDir(tempDir: string): Promise<void> {
     try {
-      await fs.rm(tempDir, { recursive: true, force: true });
+      await safeRm(tempDir, { recursive: true, force: true });
     } catch {
       // ignore cleanup errors
     }
@@ -87,10 +87,7 @@ export class IaCVerifier {
     };
   }
 
-  private async verifyCDK(
-    output: IaCGenerationOutput,
-    tempDir: string,
-  ): Promise<IaCVerifyResult> {
+  private async verifyCDK(output: IaCGenerationOutput, tempDir: string): Promise<IaCVerifyResult> {
     await this.writeFiles(output, tempDir);
 
     const hasPackageJson = output.files.some((f) => f.relativePath.endsWith('package.json'));
@@ -146,12 +143,7 @@ export class IaCVerifier {
     for (const file of pyFiles) {
       const absPath = path.join(tempDir, file.relativePath);
       try {
-        await this.runCommand(
-          'pylint',
-          ['--errors-only', absPath],
-          tempDir,
-          TIMEOUTS.boto3,
-        );
+        await this.runCommand('pylint', ['--errors-only', absPath], tempDir, TIMEOUTS.boto3);
       } catch {
         // pylint not installed — not fatal
       }
@@ -163,8 +155,8 @@ export class IaCVerifier {
   private async writeFiles(output: IaCGenerationOutput, tempDir: string): Promise<void> {
     for (const file of output.files) {
       const absPath = path.join(tempDir, file.relativePath);
-      await fs.mkdir(path.dirname(absPath), { recursive: true });
-      await fs.writeFile(absPath, file.content, 'utf-8');
+      await safeMkdir(path.dirname(absPath));
+      await safeWriteFile(absPath, file.content, 'utf-8');
     }
   }
 
@@ -213,11 +205,7 @@ export class IaCVerifier {
     }
   }
 
-  private buildResult(
-    tool: string,
-    errors: IaCVerifyError[],
-    passed?: boolean,
-  ): IaCVerifyResult {
+  private buildResult(tool: string, errors: IaCVerifyError[], passed?: boolean): IaCVerifyResult {
     return {
       tool,
       passed: passed ?? errors.length === 0,

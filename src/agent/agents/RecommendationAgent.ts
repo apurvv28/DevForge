@@ -13,6 +13,8 @@ import {
 } from '../types';
 import { DeploymentTarget, DevForgeConfig, Framework } from '../../types';
 import { logger } from '../../utils/logger';
+import ElasticMemoryStore from '../memory/ElasticMemoryStore';
+import { deriveProjectKey } from '../memory/projectKey';
 
 const SYSTEM_PROMPT = `You are DevForge's CI/CD pipeline expert. You analyze GitHub Actions
 workflows, Dockerfiles, and deployment configurations and provide actionable,
@@ -66,7 +68,27 @@ export class RecommendationAgent extends BaseAgent {
         )
       : [];
 
-    const prompt = this.buildPrompt(context, previousUnresolved);
+    // Memory: fetch recent RecommendationAgent memories (best-effort)
+    type RecommendationMemory = { data?: { recommendations?: unknown[] } };
+    let pastMemories: RecommendationMemory[] = [];
+    try {
+      const creds = this.storedCredentials?.credentials;
+      if (ElasticMemoryStore.isConfiguredFromCredentials(creds)) {
+        const url = String(creds!['ELASTICSEARCH_URL']);
+        const key = String(creds!['ELASTICSEARCH_API_KEY']);
+        const store = new ElasticMemoryStore(url, key);
+        const projectKey = deriveProjectKey();
+        pastMemories = await store.retrieve(projectKey, 'RecommendationAgent', 5).catch(() => []);
+      }
+    } catch (err) {
+      logger.warn('Failed to load past memories: ' + (err as Error).message);
+      pastMemories = [];
+    }
+
+    // Build prompt and include brief memory summary if available
+    const memorySection = await this.buildMemorySectionFromMemories(pastMemories);
+    const promptBase = this.buildPrompt(context, previousUnresolved);
+    const prompt = memorySection ? `${memorySection}\n\n${promptBase}` : promptBase;
 
     let responseText: string;
     try {
@@ -83,7 +105,110 @@ export class RecommendationAgent extends BaseAgent {
     const parsed = this.parseResponse(responseText);
     const result = this.toAgentResult(parsed, context);
     await this.persistRecommendations(result.recommendations);
+
+    // Store AgentResult to memory (best-effort)
+    try {
+      const creds = this.storedCredentials?.credentials;
+      if (ElasticMemoryStore.isConfiguredFromCredentials(creds)) {
+        const url = String(creds!['ELASTICSEARCH_URL']);
+        const key = String(creds!['ELASTICSEARCH_API_KEY']);
+        const store = new ElasticMemoryStore(url, key);
+        const projectKey = deriveProjectKey();
+        const mem = {
+          projectKey,
+          timestamp: new Date().toISOString(),
+          agentName: 'RecommendationAgent',
+          memoryType: 'recommendation' as const,
+          data: { recommendations: result.recommendations },
+          ttlDays: 30,
+        };
+        await store.store(mem).catch(() => undefined);
+      }
+    } catch (err) {
+      logger.warn('Failed to store recommendation memory: ' + (err as Error).message);
+    }
+
+    // Compute cross-session diff and attach as info message
+    try {
+      const prevTitles = new Set<string>();
+      for (const m of pastMemories) {
+        const recs = Array.isArray(m.data?.recommendations)
+          ? (m.data.recommendations as unknown[])
+          : [];
+        for (const r of recs) {
+          if (r && typeof r === 'object' && 'title' in r) {
+            const titleValue = (r as Record<string, unknown>).title;
+            if (typeof titleValue === 'string') {
+              prevTitles.add(titleValue);
+            }
+          }
+        }
+      }
+
+      const currentTitles = new Set(result.recommendations.map((r) => r.title));
+      let newCount = 0;
+      let persistentCount = 0;
+      for (const t of currentTitles) {
+        if (!prevTitles.has(t)) newCount++;
+        else persistentCount++;
+      }
+
+      // resolved = previously present but now marked acted_on in RecommendationStore
+      let resolvedCount = 0;
+      if (this.recommendationStore) {
+        const allStored = await this.recommendationStore.load();
+        const acted = new Set(allStored.filter((s) => s.status === 'acted_on').map((s) => s.title));
+        for (const t of acted) {
+          if (!currentTitles.has(t)) resolvedCount++;
+        }
+      }
+
+      const changeMsg = `Changes since last scan: +${newCount} new issues, ${resolvedCount} resolved, ${persistentCount} persistent`;
+      result.messages.unshift({ type: 'info', text: changeMsg });
+    } catch (err) {
+      // non-fatal
+    }
     return result;
+  }
+
+  private async buildMemorySectionFromMemories(
+    memories: Array<{ data?: { recommendations?: unknown[] } }>,
+  ): Promise<string | null> {
+    if (!memories || memories.length === 0) return null;
+    const lines: string[] = [];
+    const actedOn: string[] = [];
+    for (const m of memories) {
+      const recs = Array.isArray(m.data?.recommendations)
+        ? (m.data.recommendations as unknown[])
+        : [];
+      for (const r of recs) {
+        if (r && typeof r === 'object' && 'title' in r) {
+          const titleValue = (r as Record<string, unknown>).title;
+          if (typeof titleValue === 'string') {
+            lines.push(`- ${titleValue}`);
+          }
+        }
+      }
+    }
+
+    // check RecommendationStore for acted_on titles
+    try {
+      if (this.recommendationStore) {
+        const stored = await this.recommendationStore.load();
+        for (const s of stored) {
+          if (s.status === 'acted_on') actedOn.push(s.title);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    const actedList =
+      actedOn.length > 0
+        ? `These were marked as acted_on:\n${actedOn.map((t) => `- ${t}`).join('\n')}`
+        : 'No previously acted_on items found.';
+
+    return `In past sessions for this project, these issues were flagged:\n${lines.join('\n')}\n\n${actedList}\nAvoid repeating acted_on advice.`;
   }
 
   private async persistRecommendations(recommendations: Recommendation[]): Promise<void> {

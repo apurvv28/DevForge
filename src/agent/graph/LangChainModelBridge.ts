@@ -20,14 +20,23 @@ export const LANGCHAIN_PROVIDER_IDS: Record<Exclude<AgentProviderName, 'offline'
   bedrock: 'bedrock',
 };
 
-export function getLangChainProviderId(
-  provider: AgentProviderName,
-): string | null {
-  if (provider === 'offline') {
-    return null;
+export function getLangChainProviderId(provider: AgentProviderName): string | null {
+  switch (provider) {
+    case 'nova-pro':
+      return 'nova-pro';
+    case 'gemini':
+      return 'gemini';
+    case 'openai':
+      return 'openai';
+    case 'anthropic':
+      return 'anthropic';
+    case 'bedrock':
+      return 'bedrock';
+    case 'offline':
+      return null;
+    default:
+      return null;
   }
-
-  return LANGCHAIN_PROVIDER_IDS[provider];
 }
 
 /**

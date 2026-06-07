@@ -45,7 +45,10 @@ const REGISTRY: Partial<Record<RegistryKey, BlockBuilder>> = {
     },
     {
       relativePath: 'infra/main.tf',
-      content: applyVars(ECR_REPO_BLOCK + '\n' + ECS_CLUSTER_BLOCK + '\n' + ECS_TASK_DEF_BLOCK, vars),
+      content: applyVars(
+        ECR_REPO_BLOCK + '\n' + ECS_CLUSTER_BLOCK + '\n' + ECS_TASK_DEF_BLOCK,
+        vars,
+      ),
       description: 'ECR repository, ECS Fargate cluster, and task definition',
     },
     {
@@ -183,11 +186,11 @@ export function getIaCBlocks(
   vars: SubstitutionVars,
 ): IaCBlock[] {
   const key: RegistryKey = `${target}::${tool}`;
-  const builder = REGISTRY[key];
-  if (!builder) {
+  if (!Object.prototype.hasOwnProperty.call(REGISTRY, key)) {
     return getDefaultBlocks(tool, vars);
   }
-  return builder(vars);
+  const builder = REGISTRY[key as keyof typeof REGISTRY];
+  return builder ? builder(vars) : getDefaultBlocks(tool, vars);
 }
 
 export function getInstallInstructions(tool: IaCToolChoice): string[] {

@@ -1,9 +1,9 @@
 import { createHash } from 'crypto';
-import { mkdir, readFile, unlink, writeFile } from 'fs/promises';
 import os from 'os';
 import path from 'path';
 import { DevForgeFS } from '../../utils/fs';
 import { GraphNodeTiming } from './graphObservability';
+import { safeReadFile, safeWriteFile, safeUnlink, safeMkdir } from '../../utils/safeFs';
 
 const MEMORY_FILE = '.devforge/graph-memory.json';
 
@@ -30,9 +30,7 @@ export class GraphMemory {
     return createHash('sha256').update(path.resolve(this.projectRoot)).digest('hex').slice(0, 16);
   }
 
-  async saveRun(
-    record: Omit<GraphMemoryRecord, 'projectNamespace'>,
-  ): Promise<GraphMemoryRecord> {
+  async saveRun(record: Omit<GraphMemoryRecord, 'projectNamespace'>): Promise<GraphMemoryRecord> {
     const persisted: GraphMemoryRecord = {
       ...record,
       projectNamespace: this.getProjectNamespace(),
@@ -65,19 +63,22 @@ export class GraphMemory {
 
 export function resolveGraphCheckpointPath(): string {
   const configDir = process.env.DEVFORGE_CONFIG_DIR?.trim();
-  const baseDir = configDir && configDir.length > 0 ? configDir : path.join(os.homedir(), '.devforge');
+  const baseDir =
+    configDir && configDir.length > 0 ? configDir : path.join(os.homedir(), '.devforge');
   return path.join(baseDir, 'graph-checkpoints.json');
 }
 
 export async function clearGlobalGraphCheckpoints(projectNamespace: string): Promise<void> {
   const checkpointPath = resolveGraphCheckpointPath();
   try {
-    const raw = await readFile(checkpointPath, 'utf-8');
+    const raw = await safeReadFile(checkpointPath, 'utf-8');
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    // eslint-disable-next-line security/detect-object-injection
-    delete parsed[projectNamespace];
-    await mkdir(path.dirname(checkpointPath), { recursive: true });
-    await writeFile(checkpointPath, JSON.stringify(parsed, null, 2), 'utf-8');
+    const namespaceKey = String(projectNamespace);
+    const remaining = Object.fromEntries(
+      Object.entries(parsed).filter(([key]) => key !== namespaceKey),
+    );
+    await safeMkdir(path.dirname(checkpointPath));
+    await safeWriteFile(checkpointPath, JSON.stringify(remaining, null, 2), 'utf-8');
   } catch (error) {
     const errno = (error as NodeJS.ErrnoException).code;
     if (errno !== 'ENOENT') {
@@ -89,7 +90,7 @@ export async function clearGlobalGraphCheckpoints(projectNamespace: string): Pro
 export async function clearAllGlobalGraphCheckpoints(): Promise<void> {
   const checkpointPath = resolveGraphCheckpointPath();
   try {
-    await unlink(checkpointPath);
+    await safeUnlink(checkpointPath);
   } catch (error) {
     const errno = (error as NodeJS.ErrnoException).code;
     if (errno !== 'ENOENT') {

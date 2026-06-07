@@ -1,4 +1,3 @@
-import { access, mkdir, readFile, unlink, writeFile } from 'fs/promises';
 import inquirer from 'inquirer';
 import os from 'os';
 import path from 'path';
@@ -8,11 +7,9 @@ import { sanitizeString } from '../../utils/sanitizer';
 import { SanitizationError } from '../../utils/errors';
 import { logger } from '../../utils/logger';
 import { decryptCredentials, deriveEncryptionKey, encryptCredentials } from './crypto';
-import {
-  CREDENTIALS_VERSION,
-  PersistedCredentialsFile,
-  StoredCredentials,
-} from './types';
+import { isKnownCredentialKey } from './credentialKeyWhitelist';
+import { safeAccess, safeMkdir, safeReadFile, safeUnlink, safeWriteFile } from '../../utils/safeFs';
+import { CREDENTIALS_VERSION, PersistedCredentialsFile, StoredCredentials } from './types';
 
 const PROVIDER_CHOICES: Array<{ name: string; value: AgentProviderName }> = [
   { name: 'Online - Amazon Nova Pro (recommended)', value: 'nova-pro' },
@@ -52,10 +49,71 @@ function sanitizeCredentialRecord(credentials: Record<string, string>): Record<s
   const sanitized: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(credentials)) {
-    sanitized[key] = sanitizeString(value, 512);
+    if (!isKnownCredentialKey(key)) {
+      continue;
+    }
+
+    const sanitizedValue = sanitizeString(value, 512);
+    assignSanitizedCredential(sanitized, key, sanitizedValue);
   }
 
   return sanitized;
+}
+
+function assignSanitizedCredential(
+  sanitized: Record<string, string>,
+  key: string,
+  value: string,
+): void {
+  switch (key) {
+    case 'AWS_ACCESS_KEY_ID':
+      sanitized.AWS_ACCESS_KEY_ID = value;
+      break;
+    case 'AWS_SECRET_ACCESS_KEY':
+      sanitized.AWS_SECRET_ACCESS_KEY = value;
+      break;
+    case 'AWS_REGION':
+      sanitized.AWS_REGION = value;
+      break;
+    case 'BEDROCK_MODEL_ID':
+      sanitized.BEDROCK_MODEL_ID = value;
+      break;
+    case 'OPENAI_API_KEY':
+      sanitized.OPENAI_API_KEY = value;
+      break;
+    case 'ANTHROPIC_API_KEY':
+      sanitized.ANTHROPIC_API_KEY = value;
+      break;
+    case 'GEMINI_API_KEY':
+      sanitized.GEMINI_API_KEY = value;
+      break;
+    case 'ELASTICSEARCH_URL':
+      sanitized.ELASTICSEARCH_URL = value;
+      break;
+    case 'ELASTICSEARCH_API_KEY':
+      sanitized.ELASTICSEARCH_API_KEY = value;
+      break;
+    case 'ELASTICACHE_ENABLED':
+      sanitized.ELASTICACHE_ENABLED = value;
+      break;
+    case 'ELASTICACHE_HOST':
+      sanitized.ELASTICACHE_HOST = value;
+      break;
+    case 'ELASTICACHE_PORT':
+      sanitized.ELASTICACHE_PORT = value;
+      break;
+    case 'ELASTICACHE_AUTH_TOKEN':
+      sanitized.ELASTICACHE_AUTH_TOKEN = value;
+      break;
+    case 'ELASTICACHE_TLS':
+      sanitized.ELASTICACHE_TLS = value;
+      break;
+    case 'ELASTICACHE_KEY_PREFIX':
+      sanitized.ELASTICACHE_KEY_PREFIX = value;
+      break;
+    default:
+      break;
+  }
 }
 
 export class CredentialManager {
@@ -69,7 +127,7 @@ export class CredentialManager {
 
   async isFirstRun(): Promise<boolean> {
     try {
-      await access(this.credentialsPath);
+      await safeAccess(this.credentialsPath);
       await this.readAndDecrypt();
       return false;
     } catch {
@@ -94,6 +152,44 @@ export class CredentialManager {
     if (provider !== 'offline') {
       const elasticacheCredentials = await this.promptForElasticacheCredentials();
       credentials = { ...credentials, ...elasticacheCredentials };
+    }
+
+    // Optionally prompt for agent memory (Elasticsearch) credentials
+    if (provider !== 'offline') {
+      const { enableAgentMemory } = await inquirer.prompt<{ enableAgentMemory: boolean }>([
+        {
+          type: 'confirm',
+          name: 'enableAgentMemory',
+          message: 'Enable persistent agent memory (Elasticsearch)?',
+          default: false,
+        },
+      ]);
+
+      if (enableAgentMemory) {
+        const answers = await inquirer.prompt<{
+          ELASTICSEARCH_URL: string;
+          ELASTICSEARCH_API_KEY: string;
+        }>([
+          {
+            type: 'input',
+            name: 'ELASTICSEARCH_URL',
+            message: 'Elasticsearch URL (https://...):',
+            validate: sanitizeCredentialInput,
+          },
+          {
+            type: 'password',
+            name: 'ELASTICSEARCH_API_KEY',
+            message: 'Elasticsearch API key:',
+            validate: sanitizeCredentialInput,
+          },
+        ]);
+
+        credentials = {
+          ...credentials,
+          ELASTICSEARCH_URL: sanitizeString(answers.ELASTICSEARCH_URL, 1024),
+          ELASTICSEARCH_API_KEY: sanitizeString(answers.ELASTICSEARCH_API_KEY, 1024),
+        };
+      }
     }
 
     if (provider !== 'offline') {
@@ -129,7 +225,7 @@ export class CredentialManager {
 
   async clearCredentials(): Promise<void> {
     try {
-      await unlink(this.credentialsPath);
+      await safeUnlink(this.credentialsPath);
     } catch (error) {
       const errno = (error as NodeJS.ErrnoException).code;
       if (errno !== 'ENOENT') {
@@ -169,8 +265,8 @@ export class CredentialManager {
       version: credentials.version,
     };
 
-    await mkdir(path.dirname(this.credentialsPath), { recursive: true });
-    await writeFile(this.credentialsPath, JSON.stringify(persisted, null, 2), 'utf-8');
+    await safeMkdir(path.dirname(this.credentialsPath));
+    await safeWriteFile(this.credentialsPath, JSON.stringify(persisted, null, 2), 'utf-8');
 
     return {
       ...credentials,
@@ -179,7 +275,7 @@ export class CredentialManager {
   }
 
   private async readAndDecrypt(): Promise<StoredCredentials> {
-    const raw = await readFile(this.credentialsPath, 'utf-8');
+    const raw = await safeReadFile(this.credentialsPath, 'utf-8');
     const persisted = JSON.parse(raw) as PersistedCredentialsFile;
 
     if (
@@ -269,7 +365,7 @@ export class CredentialManager {
   }
 
   private async promptSingleSecret(
-    field: string,
+    field: 'GEMINI_API_KEY' | 'OPENAI_API_KEY' | 'ANTHROPIC_API_KEY',
     message: string,
   ): Promise<Record<string, string>> {
     const answers = await inquirer.prompt<Record<string, string>>([
@@ -281,9 +377,22 @@ export class CredentialManager {
       },
     ]);
 
-    return {
-      [field]: sanitizeString(answers[field] ?? '', 512),
-    };
+    const answerValue =
+      field === 'GEMINI_API_KEY'
+        ? answers.GEMINI_API_KEY
+        : field === 'OPENAI_API_KEY'
+          ? answers.OPENAI_API_KEY
+          : answers.ANTHROPIC_API_KEY;
+
+    const sanitizedValue = sanitizeString(answerValue ?? '', 512);
+    switch (field) {
+      case 'GEMINI_API_KEY':
+        return { GEMINI_API_KEY: sanitizedValue };
+      case 'OPENAI_API_KEY':
+        return { OPENAI_API_KEY: sanitizedValue };
+      case 'ANTHROPIC_API_KEY':
+        return { ANTHROPIC_API_KEY: sanitizedValue };
+    }
   }
 
   private async promptForElasticacheCredentials(): Promise<Record<string, string>> {
@@ -374,9 +483,7 @@ export class CredentialManager {
     return result;
   }
 
-  private async testElasticacheConnection(
-    credentials: Record<string, string>,
-  ): Promise<void> {
+  private async testElasticacheConnection(credentials: Record<string, string>): Promise<void> {
     const { testElastiCacheConnection } = await import('../cache/testElastiCache');
     const result = await testElastiCacheConnection({ credentials });
 

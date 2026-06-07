@@ -8,11 +8,7 @@ import { auditCommand } from './auditCommand';
 import { agentResetCommand, agentStatusCommand } from './agentCommand';
 import { diagnoseCommand } from './diagnoseCommand';
 import { agentGraphResetCommand, agentGraphStatusCommand } from './graphCommand';
-import {
-  cacheClearCommand,
-  cacheStatsCommand,
-  cacheTestElasticacheCommand,
-} from './cacheCommand';
+import { cacheClearCommand, cacheStatsCommand, cacheTestElasticacheCommand } from './cacheCommand';
 import {
   recommendationsDismissCommand,
   recommendationsListCommand,
@@ -20,6 +16,7 @@ import {
 import { DevForgeFS } from '../utils/fs';
 import { listTransactionFiles, rollbackTransaction } from '../generator/transaction';
 import { AgentCache } from '../agent/cache/AgentCache';
+import { memoryStatsCommand } from './memoryCommand';
 
 const program = new Command();
 
@@ -242,6 +239,28 @@ cacheCommand
       logger.error(err instanceof Error ? err.message : String(err));
       // eslint-disable-next-line n/no-process-exit
       process.exit(1);
+    }
+  });
+
+program
+  .command('memory')
+  .description('Manage DevForge agent memory (Elasticsearch)')
+  .action(async () => {
+    logger.info('Use subcommands: stats');
+  });
+
+program
+  .command('memory:stats')
+  .description('Show agent memory statistics for the current project')
+  .action(async () => {
+    try {
+      const code = await memoryStatsCommand();
+      if (code !== 0) {
+        throw new Error(`Memory stats command failed with code ${code}`);
+      }
+    } catch (err) {
+      logger.error(String(err));
+      throw err;
     }
   });
 

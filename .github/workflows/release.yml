@@ -9,6 +9,8 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
+  packages: write
+  # Required secrets: NPM_TOKEN, GITHUB_TOKEN
 
 jobs:
   release:
@@ -38,5 +40,8 @@ jobs:
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN || 'not-set' }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npx semantic-release
+
+      - name: Smoke test published CLI
+        run: npx devforge@latest --version

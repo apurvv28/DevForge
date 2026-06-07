@@ -6,6 +6,8 @@ import { isOfflineMode } from './OfflineFallback';
 import { AgentContext, AgentResult } from './types';
 import { AgentMessage, ChatOptions, LLMProvider } from './providers/types';
 import { logger } from '../utils/logger';
+import ElasticMemoryStore from './memory/ElasticMemoryStore';
+import { deriveProjectKey } from './memory/projectKey';
 
 const MAX_HISTORY_LENGTH = 20;
 
@@ -39,6 +41,29 @@ export abstract class BaseAgent {
       throw new AgentFallbackError(this.fallback(context));
     }
 
+    // Inject memory from Elasticsearch if configured
+    try {
+      const creds = this.storedCredentials?.credentials;
+      if (ElasticMemoryStore.isConfiguredFromCredentials(creds)) {
+        const url = String(creds!['ELASTICSEARCH_URL']);
+        const key = String(creds!['ELASTICSEARCH_API_KEY']);
+        const store = new ElasticMemoryStore(url, key);
+        const projectKey = deriveProjectKey();
+        const memories = await store.retrieve(projectKey, this.agentName, 5).catch(() => []);
+        if (memories && memories.length > 0) {
+          const memText = memories
+            .map((m) => `[${m.timestamp}] ${m.agentName}: ${JSON.stringify(m.data).slice(0, 1000)}`)
+            .join('\n');
+          options = {
+            ...options,
+            systemPrompt: `${memText}\n${options?.systemPrompt ?? this.systemPrompt}`,
+          };
+        }
+      }
+    } catch (err) {
+      logger.warn('Failed loading agent memory (non-fatal): ' + (err as Error).message);
+    }
+
     const cacheKey = buildCacheKey(this.agentName, this.systemPrompt, userMessage);
     const cached = await this.cache.get(cacheKey);
     if (cached !== null) {
@@ -59,6 +84,29 @@ export abstract class BaseAgent {
         ...options,
         systemPrompt: options?.systemPrompt ?? this.systemPrompt,
       });
+
+      // Store short memory of the interaction (best-effort)
+      try {
+        const creds = this.storedCredentials?.credentials;
+        if (ElasticMemoryStore.isConfiguredFromCredentials(creds)) {
+          const url = String(creds!['ELASTICSEARCH_URL']);
+          const key = String(creds!['ELASTICSEARCH_API_KEY']);
+          const store = new ElasticMemoryStore(url, key);
+          const projectKey = deriveProjectKey();
+          const mem = {
+            projectKey,
+            timestamp: new Date().toISOString(),
+            agentName: this.agentName,
+            memoryType: 'recommendation' as const,
+            data: { userMessage, response: response.slice(0, 8192) },
+            ttlDays: 30,
+          };
+          // don't await to avoid blocking; best-effort
+          store.store(mem).catch((e) => logger.warn('Failed storing agent memory: ' + e.message));
+        }
+      } catch (err) {
+        logger.warn('Failed storing agent memory (non-fatal): ' + (err as Error).message);
+      }
 
       this.appendToHistory({ role: 'assistant', content: response });
       await this.cache.set(cacheKey, response);

@@ -45,6 +45,14 @@ const ALLOWED_VARIABLES = new Set([
   'ECR_REGISTRY',
   'IMAGE_NAME',
   'TRIVY_EXIT_CODE',
+  // ECS variables
+  'TASK_FAMILY',
+  'CONTAINER_NAME',
+  'CPU',
+  'MEMORY',
+  'EXECUTION_ROLE_ARN',
+  'ECS_CLUSTER',
+  'ECS_SERVICE',
   // EKS variables
   'EKS_CLUSTER_NAME',
   'AWS_REGION',

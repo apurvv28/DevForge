@@ -206,7 +206,8 @@ describe('agentic init flow E2E', () => {
 
     await assertGeneratedProjectFiles();
     expect(runForegroundSpy).toHaveBeenCalledTimes(1);
-    expect(mockProvider.chat).toHaveBeenCalledTimes(1);
+    // SecurityComplianceAgent may also call chat as a background agent
+    expect(mockProvider.chat).toHaveBeenCalled();
 
     const output = consoleLogSpy.mock.calls.map((call) => String(call[0])).join('\n');
     expect(output).toContain('What your pipeline will do');
@@ -303,6 +304,10 @@ describe('agentic init flow E2E', () => {
     await seedOnlineCredentials();
     process.env.CI = 'true';
     await initCommand(projectDir);
+
+    // Flush pending setImmediate callbacks (SecurityComplianceAgent background run)
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    await new Promise<void>((resolve) => setTimeout(resolve, 20));
 
     const credentials = await new CredentialManager({
       credentialsPath: process.env.DEVFORGE_CREDENTIALS_PATH!,

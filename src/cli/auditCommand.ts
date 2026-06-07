@@ -1,6 +1,25 @@
 import Table from 'cli-table3';
 import path from 'path';
 import { DevForgeFS } from '../utils/fs';
+import { SecurityComplianceAgent } from '../agent/agents/SecurityComplianceAgent';
+import { AgentCache } from '../agent/cache/AgentCache';
+import { CredentialManager } from '../agent/credentials';
+import { StoredCredentials } from '../agent/credentials/types';
+import { resolveProvider } from '../agent/providers/ProviderFactory';
+import { LLMProvider } from '../agent/providers/types';
+import { AgentRuntime } from '../agent/AgentRuntime';
+import { AgentContext } from '../agent/types';
+import { printSecurityReport } from '../agent/reporters/SecurityReporter';
+import { generateComplianceReport } from '../agent/security/ComplianceReportGenerator';
+import { applyAutoFixes } from '../agent/security/AutoFixEngine';
+import {
+  DevForgeConfig,
+  Framework,
+  PackageManager,
+  DeploymentTarget,
+  BranchStrategy,
+} from '../types';
+import { logger } from '../utils/logger';
 
 export type AuditLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' | 'INFO';
 
@@ -17,11 +36,17 @@ export interface AuditReport {
 
 interface AuditOptions {
   fix?: boolean;
+  security?: boolean;
 }
 
 const TRUSTED_ACTION_PREFIXES = ['actions/', 'docker/', './', 'github/'];
 
 export async function auditCommand(projectRoot: string, options: AuditOptions = {}): Promise<void> {
+  if (options.security) {
+    await runSecurityAudit(projectRoot, options);
+    return;
+  }
+
   const fs = new DevForgeFS(projectRoot);
   const workflowRoot = '.github/workflows';
   const workflowFiles = await collectWorkflowFiles(fs, workflowRoot);
@@ -234,6 +259,126 @@ function hasSecretsPassedToUntrustedAction(content: string): boolean {
     return (
       action.length > 0 && !TRUSTED_ACTION_PREFIXES.some((prefix) => action.startsWith(prefix))
     );
+  });
+}
+
+async function runSecurityAudit(projectRoot: string, options: AuditOptions): Promise<void> {
+  const fs = new DevForgeFS(projectRoot);
+  const workflowRoot = '.github/workflows';
+  const workflowFiles = await collectWorkflowFiles(fs, workflowRoot);
+
+  if (workflowFiles.length === 0) {
+    console.log('No workflow YAML files found under .github/workflows/.');
+    process.exitCode = 0;
+    return;
+  }
+
+  const credentials = await loadAuditCredentials();
+  if (!credentials) {
+    logger.warn('No credentials configured. Run `devforge agent reset` to set up a provider.');
+    process.exitCode = 1;
+    return;
+  }
+
+  const provider = buildAuditProvider(credentials);
+  const readFile = (p: string) => fs.readFile(p);
+  const agent = new SecurityComplianceAgent(provider, credentials, new AgentCache(), readFile);
+
+  const config = buildMinimalConfig(projectRoot);
+  const context: AgentContext = {
+    config,
+    generatedFiles: workflowFiles,
+    lastRunJson: null,
+    failureSignals: [],
+  };
+
+  const runtime = new AgentRuntime();
+  const result = await runtime.runForeground(agent, context);
+
+  const violations = extractViolations(result.recommendations, workflowFiles[0] ?? projectRoot);
+
+  const riskScore =
+    violations.length === 0
+      ? 0
+      : violations.some((v) => v.severity === 'critical')
+        ? 90
+        : violations.some((v) => v.severity === 'high')
+          ? 60
+          : 30;
+
+  printSecurityReport(violations, riskScore);
+  await generateComplianceReport(violations, config, fs);
+
+  if (options.fix) {
+    await applyAutoFixes(violations, fs);
+  }
+
+  const hasCritical = violations.some((v) => v.severity === 'critical');
+  const hasHigh = violations.some((v) => v.severity === 'high');
+  process.exitCode = hasCritical ? 1 : hasHigh ? 2 : 0;
+}
+
+async function loadAuditCredentials(): Promise<StoredCredentials | null> {
+  try {
+    const manager = new CredentialManager();
+    if (await manager.isFirstRun()) return null;
+    return await manager.loadCredentials();
+  } catch {
+    return null;
+  }
+}
+
+function buildAuditProvider(credentials: StoredCredentials): LLMProvider {
+  if (credentials.provider === 'offline') {
+    return { name: 'offline', chat: async () => '', isAvailable: async () => false };
+  }
+  return resolveProvider({ provider: credentials.provider, credentials: credentials.credentials });
+}
+
+function buildMinimalConfig(projectRoot: string): DevForgeConfig {
+  return {
+    projectRoot,
+    detected: {
+      framework: Framework.UNKNOWN,
+      packageManager: PackageManager.NPM,
+      nodeVersion: '20',
+      hasDocker: false,
+      hasTests: false,
+      hasLinting: false,
+      testCommand: null,
+      buildCommand: null,
+      installCommand: 'npm ci',
+      detectedAt: new Date().toISOString(),
+    },
+    user: {
+      deploymentTarget: DeploymentTarget.DOCKER,
+      branchStrategy: BranchStrategy.FEATURE_MAIN,
+      dockerRequired: false,
+      multiEnvironment: false,
+      environments: [],
+    },
+    dryRun: false,
+    generatedAt: new Date().toISOString(),
+    devforgeVersion: '2.0.0',
+  };
+}
+
+function extractViolations(
+  recommendations: import('../agent/types').Recommendation[],
+  fallbackFile: string,
+): import('../agent/security/StaticSecurityScanner').ComplianceViolation[] {
+  return recommendations.map((r) => {
+    const controlId = r.title.match(/\[([^\]]+)\]/)?.[1] ?? 'UNKNOWN';
+    const standard: 'NIST' | 'ISO27001' = controlId.startsWith('ISO') ? 'ISO27001' : 'NIST';
+    return {
+      controlId,
+      standard,
+      title: r.title.replace(/^\[[^\]]+\]\s*/, ''),
+      description: r.description,
+      affectedFile: fallbackFile,
+      severity: r.severity,
+      remediation: r.description.split(' — ').pop() ?? '',
+    };
   });
 }
 

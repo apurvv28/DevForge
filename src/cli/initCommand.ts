@@ -16,6 +16,7 @@ import { CredentialManager } from '../agent/credentials';
 import { StoredCredentials } from '../agent/credentials/types';
 import { formatProviderName, getProviderMode } from '../agent/providerDisplay';
 import { runRecommendationPipeline } from './recommendationPipeline';
+import { runSecurityBackgroundAgent } from './securityPipeline';
 
 /**
  * Orchestrates the complete DevForge initialization workflow.
@@ -194,6 +195,10 @@ export async function initCommand(
       noAgent: options.noAgent ?? false,
       noReport: options.noReport ?? false,
     });
+
+    if (!options.noAgent) {
+      await runSecurityBackgroundAgent(validatedConfig, fs, generationResult.written);
+    }
 
     if (timingEnabled) {
       printTimings(timings);

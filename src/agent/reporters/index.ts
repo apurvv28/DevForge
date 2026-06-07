@@ -3,3 +3,4 @@ export {
   renderExpectedOutputReport,
   resolveExpectedOutputs,
 } from './ExpectedOutputReporter';
+export { printSecurityReport } from './SecurityReporter';

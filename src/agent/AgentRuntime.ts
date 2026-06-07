@@ -23,8 +23,16 @@ export class AgentRuntime {
     }
   }
 
-  async runBackground(agent: BaseAgent, context: AgentContext): Promise<void> {
-    void this.runForeground(agent, context);
+  runBackground(agent: BaseAgent, context: AgentContext): void {
+    setImmediate(async () => {
+      try {
+        const result = await agent.run(context);
+        this.printResult(result);
+      } catch (e) {
+        const name = agent.agentName;
+        logger.warn(`[agent] ${name} encountered an error and was skipped`);
+      }
+    });
   }
 
   async runAll(
@@ -34,7 +42,7 @@ export class AgentRuntime {
   ): Promise<AgentResult[]> {
     if (mode === 'background') {
       for (const agent of agents) {
-        void this.runBackground(agent, context);
+        this.runBackground(agent, context);
       }
       return [];
     }

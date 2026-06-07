@@ -91,9 +91,13 @@ program
   .command('audit')
   .description('Audit generated workflows for security misconfigurations')
   .option('--fix', 'Show auto-fix stub message')
+  .option('--security', 'Run NIST/ISO compliance scan via SecurityComplianceAgent')
   .action(async (options) => {
     try {
-      await auditCommand(process.cwd(), { fix: Boolean(options.fix) });
+      await auditCommand(process.cwd(), {
+        fix: Boolean(options.fix),
+        security: Boolean(options.security),
+      });
     } catch (err) {
       logger.error(err instanceof Error ? err.message : String(err));
       // eslint-disable-next-line n/no-process-exit

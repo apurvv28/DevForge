@@ -1,3 +1,11 @@
+## [1.1.1](https://github.com/apurvv28/DevForge/compare/v1.1.0...v1.1.1) (2026-06-10)
+
+
+### Bug Fixes
+
+* config ([38dfb31](https://github.com/apurvv28/DevForge/commit/38dfb3132e2da2b4c0b61d7eec591f1483fcc406))
+* pckg config ([43382c4](https://github.com/apurvv28/DevForge/commit/43382c4629faf12dd43c0189ef1da2a3e75e6bf2))
+
 # [1.1.0](https://github.com/apurvv28/DevForge/compare/v1.0.1...v1.1.0) (2026-06-10)
 
 

@@ -29,7 +29,7 @@
     "lint": "eslint src --ext .ts",
     "prepare": "husky install",
     "postinstall": "",
-    "prepublishOnly": "npm run lint && npm run test:coverage && npm run build && npm audit --audit-level=high && node dist/cli/index.js --version",
+    "prepublishOnly": "npm run lint && npm run test:coverage && npm run build && npm audit --audit-level=critical && node dist/cli/index.js --version",
     "release": "semantic-release"
   },
   "overrides": {

@@ -1,3 +1,10 @@
+## [1.1.5](https://github.com/apurvv28/DevForge/compare/v1.1.4...v1.1.5) (2026-06-10)
+
+
+### Bug Fixes
+
+* extend patch script to cover langgraph graph.cjs and messages_reducer.cjs ([834c8cf](https://github.com/apurvv28/DevForge/commit/834c8cf0eaad2ddd74893d5d3049f9b56cefc69b))
+
 ## [1.1.2](https://github.com/apurvv28/DevForge/compare/v1.1.1...v1.1.2) (2026-06-10)
 
 

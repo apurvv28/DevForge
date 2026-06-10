@@ -1,10 +1,3 @@
-## [1.1.3](https://github.com/apurvv28/DevForge/compare/v1.1.2...v1.1.3) (2026-06-10)
-
-
-### Bug Fixes
-
-* patch langgraph-checkpoint id.cjs to replace ESM uuid with crypto builtins ([2d6ecc5](https://github.com/apurvv28/DevForge/commit/2d6ecc5fb5eea3e0ccacded2710cfc2568c7bbb7))
-
 ## [1.1.2](https://github.com/apurvv28/DevForge/compare/v1.1.1...v1.1.2) (2026-06-10)
 
 

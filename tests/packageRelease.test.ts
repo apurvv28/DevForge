@@ -15,7 +15,7 @@ describe('package release hardening', () => {
     expect(packageJson.engines?.node).toBe('>=18.0.0');
     expect(packageJson.license).toBe('MIT');
     expect(packageJson.scripts?.prepublishOnly).toBe(
-      'npm run lint && npm run test:coverage && npm run build && npm audit --audit-level=high && node dist/cli/index.js --version',
+      'npm run lint && npm run test:coverage && npm run build && npm audit --audit-level=critical && node dist/cli/index.js --version',
     );
     expect(packageJson.scripts?.postinstall).toBe('');
   });

@@ -1,3 +1,10 @@
+## [1.1.4](https://github.com/apurvv28/DevForge/compare/v1.1.3...v1.1.4) (2026-06-10)
+
+
+### Bug Fixes
+
+* replace patch-package with prebuild script to patch langgraph id.cjs ([4ac991b](https://github.com/apurvv28/DevForge/commit/4ac991b0473c636989bd6ee50c2a66f646416f8a))
+
 ## [1.1.2](https://github.com/apurvv28/DevForge/compare/v1.1.1...v1.1.2) (2026-06-10)
 
 

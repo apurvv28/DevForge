@@ -1,6 +1,6 @@
 {
   "name": "@apurvv28/devforge",
-  "version": "1.1.2",
+  "version": "1.1.4",
   "description": "Automated CI/CD Pipeline Generator and Deployment Automation Tool",
   "main": "dist/index.js",
   "bin": {

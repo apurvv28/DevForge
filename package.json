@@ -28,7 +28,7 @@
     "audit": "npm audit --audit-level=high",
     "lint": "eslint src --ext .ts",
     "prepare": "husky install",
-    "postinstall": "",
+    "postinstall": "patch-package",
     "prepublishOnly": "npm run lint && npm run test:coverage && npm run build && npm audit --audit-level=critical && node dist/cli/index.js --version",
     "release": "semantic-release"
   },
@@ -36,8 +36,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "0.54.0",
     "@aws-sdk/client-bedrock-runtime": "3.1063.0",
-    "@google/generative-ai": "0.24.1",
     "@elastic/elasticsearch": "8.11.0",
+    "@google/generative-ai": "0.24.1",
     "@langchain/anthropic": "1.0.0",
     "@langchain/aws": "1.0.0",
     "@langchain/core": "1.1.48",
@@ -79,6 +79,7 @@
     "husky": "9.0.11",
     "jest": "29.7.0",
     "lint-staged": "15.5.2",
+    "patch-package": "^8.0.1",
     "prettier": "3.2.5",
     "semantic-release": "23.1.1",
     "tinybench": "2.5.1",

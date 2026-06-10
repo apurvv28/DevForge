@@ -1,0 +1,56 @@
+diff --git a/node_modules/@langchain/langgraph-checkpoint/dist/id.cjs b/node_modules/@langchain/langgraph-checkpoint/dist/id.cjs
+index aded14a..3e0abb7 100644
+--- a/node_modules/@langchain/langgraph-checkpoint/dist/id.cjs
++++ b/node_modules/@langchain/langgraph-checkpoint/dist/id.cjs
+@@ -1,26 +1,39 @@
+-let uuid = require("uuid");
++const _crypto = require("crypto");
+ //#region src/id.ts
+ let lastMsecs = 0;
+ let lastNsecs = 0;
++function _bytesToUuid(b) {
++	return [b[0],b[1],b[2],b[3],'-',b[4],b[5],'-',b[6],b[7],'-',b[8],b[9],'-',b[10],b[11],b[12],b[13],b[14],b[15]]
++		.map((v) => typeof v === 'string' ? v : v.toString(16).padStart(2, '0')).join('');
++}
+ function uuid6(clockseq) {
+ 	let msecs = Date.now();
+ 	if (msecs <= lastMsecs) {
+ 		lastNsecs += 1;
+-		if (lastNsecs >= 1e4) {
+-			lastNsecs = 0;
+-			msecs = lastMsecs + 1;
+-		}
++		if (lastNsecs >= 1e4) { lastNsecs = 0; msecs = lastMsecs + 1; }
+ 	} else lastNsecs = 0;
+ 	lastMsecs = msecs;
+-	return (0, uuid.v6)({
+-		clockseq,
+-		msecs,
+-		nsecs: lastNsecs
+-	});
++	const b = _crypto.randomBytes(16);
++	const msecsFull = BigInt(msecs) + 122192928000000000n;
++	const nsecsFull = msecsFull * 10000n + BigInt(lastNsecs);
++	b[0] = Number((nsecsFull >> 52n) & 0xffn);
++	b[1] = Number((nsecsFull >> 44n) & 0xffn);
++	b[2] = Number((nsecsFull >> 36n) & 0xffn);
++	b[3] = Number((nsecsFull >> 28n) & 0xffn);
++	b[4] = Number((nsecsFull >> 20n) & 0xffn);
++	b[5] = Number((nsecsFull >> 12n) & 0xffn);
++	b[6] = (Number((nsecsFull >> 8n) & 0x0fn)) | 0x60;
++	b[7] = Number(nsecsFull & 0xffn);
++	if (clockseq !== undefined) { b[8] = (clockseq >> 8) & 0x3f | 0x80; b[9] = clockseq & 0xff; }
++	else b[8] = (b[8] & 0x3f) | 0x80;
++	return _bytesToUuid(b);
+ }
+ function uuid5(name, namespace) {
+-	const namespaceBytes = namespace.replace(/-/g, "").match(/.{2}/g).map((byte) => parseInt(byte, 16));
+-	return (0, uuid.v5)(name, new Uint8Array(namespaceBytes));
++	const nsBytes = namespace.replace(/-/g, "").match(/.{2}/g).map((byte) => parseInt(byte, 16));
++	const hash = _crypto.createHash('sha1').update(Buffer.from(nsBytes)).update(name).digest();
++	hash[6] = (hash[6] & 0x0f) | 0x50;
++	hash[8] = (hash[8] & 0x3f) | 0x80;
++	return _bytesToUuid(hash);
+ }
+ //#endregion
+ exports.uuid5 = uuid5;

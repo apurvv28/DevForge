@@ -1,3 +1,21 @@
+# [1.1.0](https://github.com/apurvv28/DevForge/compare/v1.0.1...v1.1.0) (2026-06-10)
+
+
+### Bug Fixes
+
+* bug-fixed ([9e76bc7](https://github.com/apurvv28/DevForge/commit/9e76bc7ab4ca9fe5398da796640bb02b15966340))
+* bugfixes ([06ba02b](https://github.com/apurvv28/DevForge/commit/06ba02bce99afaa8aa5f0dcd8ceea7381ec807cb))
+* ecs, eks yaml file checks ([873b7e1](https://github.com/apurvv28/DevForge/commit/873b7e1b85db36f19bd741a15995d255d681ae3a))
+* **release:** updated release pipeline ([6537b7f](https://github.com/apurvv28/DevForge/commit/6537b7fb8b5a0897ae8c3110a20a267e40c39581))
+* resolve IaC executor and template renderer linting issues ([f104e5f](https://github.com/apurvv28/DevForge/commit/f104e5f8f0131fca526935e9c56cfc6bf09e2165))
+* resolve pipeline and test failures ([adcb033](https://github.com/apurvv28/DevForge/commit/adcb0333df1acd953fa2eb1147a034a126c43ad2))
+* updated pckg ([df7fb42](https://github.com/apurvv28/DevForge/commit/df7fb420ddc97d10f3c61b1615c6519c321b9e5d))
+
+
+### Features
+
+* **security:** add Trivy vulnerability scanner integration (Feature 3.5-A) ([809642c](https://github.com/apurvv28/DevForge/commit/809642ccc5af4e2c22e00ed0148fcccc5f8c7229))
+
 # 2.1.0 (2026-06-07)
 
 ## v2.0.0 — Agentic Edition

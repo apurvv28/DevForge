@@ -1,3 +1,11 @@
+## [1.1.2](https://github.com/apurvv28/DevForge/compare/v1.1.1...v1.1.2) (2026-06-10)
+
+
+### Bug Fixes
+
+* remove uuid override and direct dep, regenerate lock file ([0792556](https://github.com/apurvv28/DevForge/commit/079255610af223dee49f3453430f090a823802ea))
+* uuid package issues ([5c09ae9](https://github.com/apurvv28/DevForge/commit/5c09ae9602da5f65c3bc62c9e62d1aba1ad57cd6))
+
 ## [1.1.1](https://github.com/apurvv28/DevForge/compare/v1.1.0...v1.1.1) (2026-06-10)
 
 

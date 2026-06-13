@@ -16,6 +16,7 @@ const PROVIDER_CHOICES: Array<{ name: string; value: AgentProviderName }> = [
   { name: 'Online - Google Gemini', value: 'gemini' },
   { name: 'Online - OpenAI', value: 'openai' },
   { name: 'Online - Anthropic', value: 'anthropic' },
+  { name: 'Online - Grok (xAI)', value: 'grok' },
   { name: 'Online - Amazon Bedrock (custom)', value: 'bedrock' },
   { name: 'Offline - use template engine only', value: 'offline' },
 ];
@@ -86,6 +87,9 @@ function assignSanitizedCredential(
       break;
     case 'GEMINI_API_KEY':
       sanitized.GEMINI_API_KEY = value;
+      break;
+    case 'GROK_API_KEY':
+      sanitized.GROK_API_KEY = value;
       break;
     case 'ELASTICSEARCH_URL':
       sanitized.ELASTICSEARCH_URL = value;
@@ -309,6 +313,8 @@ export class CredentialManager {
         return this.promptSingleSecret('OPENAI_API_KEY', 'Enter your OpenAI API key:');
       case 'anthropic':
         return this.promptSingleSecret('ANTHROPIC_API_KEY', 'Enter your Anthropic API key:');
+      case 'grok':
+        return this.promptSingleSecret('GROK_API_KEY', 'Enter your Grok (xAI) API key:');
       case 'bedrock': {
         const awsCredentials = await this.promptAwsCredentials();
         const { modelId } = await inquirer.prompt<{ modelId: string }>([
@@ -365,7 +371,7 @@ export class CredentialManager {
   }
 
   private async promptSingleSecret(
-    field: 'GEMINI_API_KEY' | 'OPENAI_API_KEY' | 'ANTHROPIC_API_KEY',
+    field: 'GEMINI_API_KEY' | 'OPENAI_API_KEY' | 'ANTHROPIC_API_KEY' | 'GROK_API_KEY',
     message: string,
   ): Promise<Record<string, string>> {
     const answers = await inquirer.prompt<Record<string, string>>([
@@ -377,22 +383,8 @@ export class CredentialManager {
       },
     ]);
 
-    const answerValue =
-      field === 'GEMINI_API_KEY'
-        ? answers.GEMINI_API_KEY
-        : field === 'OPENAI_API_KEY'
-          ? answers.OPENAI_API_KEY
-          : answers.ANTHROPIC_API_KEY;
-
-    const sanitizedValue = sanitizeString(answerValue ?? '', 512);
-    switch (field) {
-      case 'GEMINI_API_KEY':
-        return { GEMINI_API_KEY: sanitizedValue };
-      case 'OPENAI_API_KEY':
-        return { OPENAI_API_KEY: sanitizedValue };
-      case 'ANTHROPIC_API_KEY':
-        return { ANTHROPIC_API_KEY: sanitizedValue };
-    }
+    const sanitizedValue = sanitizeString((answers[field] as string | undefined) ?? '', 512);
+    return { [field]: sanitizedValue };
   }
 
   private async promptForElasticacheCredentials(): Promise<Record<string, string>> {

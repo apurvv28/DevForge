@@ -4,6 +4,7 @@ export type AgentProviderName =
   | 'openai'
   | 'anthropic'
   | 'bedrock'
+  | 'grok'
   | 'offline';
 
 export interface AgentMessage {

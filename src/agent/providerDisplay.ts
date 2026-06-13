@@ -12,6 +12,8 @@ export function formatProviderName(provider: AgentProviderName): string {
       return 'Anthropic';
     case 'bedrock':
       return 'Amazon Bedrock';
+    case 'grok':
+      return 'Grok (xAI)';
     case 'offline':
       return 'Offline';
     default:

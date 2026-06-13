@@ -17,6 +17,8 @@ import { StoredCredentials } from '../agent/credentials/types';
 import { formatProviderName, getProviderMode } from '../agent/providerDisplay';
 import { runRecommendationPipeline } from './recommendationPipeline';
 import { runSecurityBackgroundAgent } from './securityPipeline';
+import { runAwsDeployGuideNode } from '../agent/graph/nodes/awsDeployGuideNode';
+import { resolveProvider } from '../agent/providers/ProviderFactory';
 
 /**
  * Orchestrates the complete DevForge initialization workflow.
@@ -192,6 +194,21 @@ export async function initCommand(
     await fs.writeFile('.devforge/SECRETS_REQUIRED.md', secretsDoc);
 
     logger.success('✓ SECRETS_REQUIRED.md created');
+
+    // AWS deployment guide — only for AWS targets, only when agent is enabled
+    if (!options.noAgent && activeCredentials && activeCredentials.provider !== 'offline') {
+      try {
+        const llmProvider = resolveProvider({
+          provider: activeCredentials.provider,
+          credentials: activeCredentials.credentials,
+        });
+        await runAwsDeployGuideNode(validatedConfig, fs, llmProvider);
+      } catch (err) {
+        // Non-fatal — guide generation failure should not abort init
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.warn(`[aws-guide] Skipped: ${msg}`);
+      }
+    }
 
     await runRecommendationPipeline(validatedConfig, fs, generationResult.written, {
       noAgent: options.noAgent ?? false,

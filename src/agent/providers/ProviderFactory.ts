@@ -2,6 +2,7 @@ import { AgentConfigError } from '../../utils/errors';
 import { AnthropicProvider } from './Anthropic';
 import { BedrockProvider } from './Bedrock';
 import { GeminiProvider } from './Gemini';
+import { GrokProvider } from './Grok';
 import { NovaProProvider } from './NovaPro';
 import { OpenAIProvider } from './OpenAI';
 import { DevForgeAgentConfig, LLMProvider } from './types';
@@ -18,6 +19,8 @@ export function resolveProvider(config: DevForgeAgentConfig): LLMProvider {
       return new AnthropicProvider(config.credentials);
     case 'bedrock':
       return new BedrockProvider(config.credentials);
+    case 'grok':
+      return new GrokProvider(config.credentials);
     case 'offline':
       throw new AgentConfigError('Offline mode does not use an LLM provider');
     default:

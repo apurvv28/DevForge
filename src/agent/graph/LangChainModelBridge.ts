@@ -18,6 +18,7 @@ export const LANGCHAIN_PROVIDER_IDS: Record<Exclude<AgentProviderName, 'offline'
   openai: 'openai',
   anthropic: 'anthropic',
   bedrock: 'bedrock',
+  grok: 'grok',
 };
 
 export function getLangChainProviderId(provider: AgentProviderName): string | null {
@@ -32,6 +33,8 @@ export function getLangChainProviderId(provider: AgentProviderName): string | nu
       return 'anthropic';
     case 'bedrock':
       return 'bedrock';
+    case 'grok':
+      return 'grok';
     case 'offline':
       return null;
     default:
@@ -99,6 +102,18 @@ export function toLangChainChatModel(credentials: StoredCredentials): BaseChatMo
       }
 
       return createBedrockModel(creds, modelId);
+    }
+    case 'grok': {
+      // Grok uses OpenAI-compatible API — reuse ChatOpenAI with custom baseURL
+      const apiKey = creds.GROK_API_KEY;
+      if (!apiKey) return null;
+      return new ChatOpenAI({
+        apiKey,
+        model: 'grok-3-mini',
+        configuration: { baseURL: 'https://api.x.ai/v1' },
+        timeout: CHAT_TIMEOUT_MS,
+        maxRetries: 1,
+      });
     }
     default:
       return null;

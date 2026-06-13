@@ -17,6 +17,7 @@ import { DevForgeFS } from '../utils/fs';
 import { listTransactionFiles, rollbackTransaction } from '../generator/transaction';
 import { AgentCache } from '../agent/cache/AgentCache';
 import { memoryStatsCommand } from './memoryCommand';
+import { deployCommand } from './deployCommand';
 
 const program = new Command();
 
@@ -320,6 +321,26 @@ program
       else logger.success('Rollback completed');
     } catch (err) {
       logger.error(`Rollback failed: ${String(err)}`);
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(1);
+    }
+  });
+
+program
+  .command('deploy')
+  .description('Automate AWS deployment steps from the generated guide')
+  .option('--dry-run', 'Show commands without executing them')
+  .option('--yes', 'Auto-approve non-destructive steps')
+  .option('--plan <file>', 'Path to custom deploy-plan.json')
+  .action(async (options) => {
+    try {
+      await deployCommand(process.cwd(), {
+        dryRun: Boolean(options.dryRun),
+        yes: Boolean(options.yes),
+        plan: options.plan,
+      });
+    } catch (err) {
+      logger.error('\n✗ Deployment failed');
       // eslint-disable-next-line n/no-process-exit
       process.exit(1);
     }

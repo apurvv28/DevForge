@@ -4,6 +4,7 @@ import { DevForgeFS } from '../../../utils/fs';
 import { logger } from '../../../utils/logger';
 import { LLMProvider } from '../../providers/types';
 import { inspectAwsCli, safeMetadataForLlm, AwsCliMetadata } from '../../aws/awsCliInspector';
+import { buildDeployPlan } from '../../aws/awsDeployPlan';
 
 const AWS_TARGETS = new Set<string>([
   DeploymentTarget.AWS_EC2,
@@ -12,7 +13,13 @@ const AWS_TARGETS = new Set<string>([
 ]);
 
 function targetLabel(target: string): string {
-  return { aws_ec2: 'EC2', aws_ecs: 'ECS (Fargate)', aws_eks: 'EKS' }[target] ?? target;
+  const labels: Record<string, string> = {
+    aws_ec2: 'EC2',
+    aws_ecs: 'ECS (Fargate)',
+    aws_eks: 'EKS',
+  };
+  // eslint-disable-next-line security/detect-object-injection
+  return labels[target] ?? target;
 }
 
 function buildPrompt(
@@ -123,6 +130,15 @@ async function generateAndWrite(
   await fs.ensureDir('.devforge');
   await fs.writeFile('.devforge/AWS_DEPLOYMENT_GUIDE.md', guideContent);
   logger.success('[aws-guide] ✓ .devforge/AWS_DEPLOYMENT_GUIDE.md created');
+
+  try {
+    const deployPlan = buildDeployPlan(config, meta);
+    await fs.writeFile('.devforge/deploy-plan.json', JSON.stringify(deployPlan, null, 2));
+    logger.success('[aws-guide] ✓ .devforge/deploy-plan.json created');
+  } catch (planErr) {
+    const msg = planErr instanceof Error ? planErr.message : String(planErr);
+    logger.warn(`[aws-guide] Failed to generate deploy-plan.json: ${msg}`);
+  }
 }
 
 function buildPlaceholderGuide(target: string, region: string | null): string {

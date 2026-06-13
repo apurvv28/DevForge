@@ -60,7 +60,7 @@ For all providers:
 - Cross-session memory is backed by Amazon Elastic (Elasticsearch).
 - Configure `ELASTICSEARCH_URL` and `ELASTICSEARCH_API_KEY` in your environment or via the interactive prompt.
 - Memory is used to surface prior recommendation findings and prevent repeated advice.
-- Use `devforge memory stats` to review project memory health.
+- Use `devforge memory:stats` to review project memory health.
 
 ## Agent Commands Reference
 
@@ -68,4 +68,4 @@ For all providers:
 - `devforge agent reset` — clear agent state and reset memory-backed recommendations.
 - `devforge cache clear` — remove cached detection/template data.
 - `devforge cache stats` — show cache health and entry counts.
-- `devforge memory stats` — show memory counts, estimated size, and project key.
+- `devforge memory:stats` — show memory counts, estimated size, and project key.

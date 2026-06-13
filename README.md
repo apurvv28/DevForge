@@ -58,9 +58,7 @@ For command details, see [docs/COMMANDS.md](docs/COMMANDS.md).
 [![NestJS](https://img.shields.io/badge/NestJS-supported-ea285f)](#)
 [![Vue](https://img.shields.io/badge/Vue-supported-42b883)](#)
 [![Angular](https://img.shields.io/badge/Angular-supported-dd0031)](#)
-[![FastAPI](https://img.shields.io/badge/FastAPI-supported-009688)](#)
-[![Django](https://img.shields.io/badge/Django-supported-092E20)](#)
-[![Flask](https://img.shields.io/badge/Flask-supported-000000)](#)
+[![MERN](https://img.shields.io/badge/MERN-supported-blue)](#)
 
 ## Supported Deployment Targets
 
@@ -87,6 +85,8 @@ For command details, see [docs/COMMANDS.md](docs/COMMANDS.md).
 `init` is the primary entry point. It detects the project, collects deployment preferences, optionally previews the output, and writes the generated workflows plus secrets guidance into `.devforge/`.
 
 `update` refreshes existing DevForge-managed workflows against the latest templates. It shows a diff, preserves custom sections, and only applies changes after confirmation.
+
+`deploy` automates step-by-step AWS deployments (ECS, EKS, EC2) from the generated guide/plan with interactive prompts, live terminal output streaming, and reverse-order rollback capability.
 
 `audit` scans any GitHub Actions workflow set for security, performance, and best-practice issues. It prints a per-file report and exits non-zero when high-severity findings exist.
 

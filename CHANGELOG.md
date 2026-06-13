@@ -1,3 +1,11 @@
+# [1.2.0](https://github.com/apurvv28/DevForge/compare/v1.1.5...v1.2.0) (2026-06-13)
+
+
+### Features
+
+* add deploy command, AWS deploy executor, deploy plan, and fix release smoke test ([0651ccf](https://github.com/apurvv28/DevForge/commit/0651ccfea21622706f8c49d2b3a3866b1f6a1e83))
+* add Grok provider and AWS CLI deployment guide generation ([ee55af5](https://github.com/apurvv28/DevForge/commit/ee55af58abdbc11920951dd96ba53366ad26eeed))
+
 ## [1.1.5](https://github.com/apurvv28/DevForge/compare/v1.1.4...v1.1.5) (2026-06-10)
 
 

@@ -14,9 +14,9 @@ describe('Template Storage', () => {
       expect(typeof TEMPLATES).toBe('object');
     });
 
-    it('should have exactly 20 templates', () => {
+    it('should have exactly 29 templates', () => {
       const templateIds = Object.keys(TEMPLATES);
-      expect(templateIds).toHaveLength(20);
+      expect(templateIds).toHaveLength(29);
     });
 
     it('should contain all required template IDs', () => {
@@ -41,6 +41,15 @@ describe('Template Storage', () => {
         'ecs-task-definition',
         'ecs-readme',
         'ecs-secrets-required',
+        'jenkins-base-ci',
+        'jenkins-vercel-deploy',
+        'jenkins-railway-deploy',
+        'jenkins-render-deploy',
+        'jenkins-firebase-deploy',
+        'jenkins-aws-ec2-deploy',
+        'jenkins-aws-ecs-deploy',
+        'jenkins-aws-eks-deploy',
+        'jenkins-docker-build',
       ];
       requiredIds.forEach((id) => {
         expect(TEMPLATES).toHaveProperty(id);
@@ -93,9 +102,9 @@ describe('Template Storage', () => {
       expect(Array.isArray(ids)).toBe(true);
     });
 
-    it('should return exactly 20 template IDs', () => {
+    it('should return exactly 29 template IDs', () => {
       const ids = getAvailableTemplateIds();
-      expect(ids).toHaveLength(20);
+      expect(ids).toHaveLength(29);
     });
 
     it('should return IDs that match TEMPLATES object keys', () => {
@@ -348,6 +357,8 @@ describe('Template Storage', () => {
         'APP_NAME',
         'REPLICAS',
         'DOMAIN',
+        'jenkinsAgentLabel',
+        'jenkinsNodeTool',
       ];
 
       templates.forEach((template) => {
@@ -476,6 +487,15 @@ describe('Template Storage', () => {
         'ecs-task-definition',
         'ecs-readme',
         'ecs-secrets-required',
+        'jenkins-base-ci',
+        'jenkins-vercel-deploy',
+        'jenkins-railway-deploy',
+        'jenkins-render-deploy',
+        'jenkins-firebase-deploy',
+        'jenkins-aws-ec2-deploy',
+        'jenkins-aws-ecs-deploy',
+        'jenkins-aws-eks-deploy',
+        'jenkins-docker-build',
       ];
       const actualIds = getAvailableTemplateIds().sort();
       expect(actualIds).toEqual(expectedIds.sort());

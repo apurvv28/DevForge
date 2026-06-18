@@ -47,6 +47,7 @@ function buildContext(
         environments: [],
         enableTrivyScan: false,
         iacTool: 'terraform' as const,
+        enableJenkinsfile: false,
         ...overrides,
       },
       dryRun: false,

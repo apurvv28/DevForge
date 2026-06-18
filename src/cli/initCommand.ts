@@ -258,6 +258,7 @@ function getDefaultUserConfig(detected: DetectedProject): UserConfig {
     multiEnvironment: false,
     environments: [],
     enableTrivyScan: false,
+    enableJenkinsfile: false,
   };
 
   return userConfig;

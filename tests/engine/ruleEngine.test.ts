@@ -31,6 +31,7 @@ describe('ruleEngine', () => {
         dockerRequired: false,
         multiEnvironment: false,
         environments: [],
+        enableJenkinsfile: false,
       },
       dryRun: false,
       generatedAt: new Date().toISOString(),
@@ -503,6 +504,97 @@ describe('ruleEngine', () => {
       expect(devEnv!.value).toBe('dev');
       expect(stagingEnv!.value).toBe('staging');
       expect(prodEnv!.value).toBe('production');
+    });
+  });
+
+  describe('Jenkinsfile planning', () => {
+    it('does not generate Jenkinsfile when enableJenkinsfile is false', () => {
+      const config = createMockConfig({
+        user: {
+          deploymentTarget: DeploymentTarget.RAILWAY,
+          branchStrategy: BranchStrategy.FEATURE_MAIN,
+          dockerRequired: false,
+          multiEnvironment: false,
+          environments: [],
+          enableJenkinsfile: false,
+        },
+      });
+
+      const plan = buildGenerationPlan(config);
+      const jenkinsFile = plan.files.find((f) => f.path === 'Jenkinsfile');
+      expect(jenkinsFile).toBeUndefined();
+    });
+
+    it('generates Jenkinsfile when enableJenkinsfile is true', () => {
+      const config = createMockConfig({
+        user: {
+          deploymentTarget: DeploymentTarget.RAILWAY,
+          branchStrategy: BranchStrategy.FEATURE_MAIN,
+          dockerRequired: false,
+          multiEnvironment: false,
+          environments: [],
+          enableJenkinsfile: true,
+        },
+      });
+
+      const plan = buildGenerationPlan(config);
+      const jenkinsFile = plan.files.find((f) => f.path === 'Jenkinsfile');
+      expect(jenkinsFile).toBeDefined();
+      expect(jenkinsFile!.templateId).toBe('jenkins-railway-deploy');
+    });
+
+    it('selects correct template based on target', () => {
+      const targets = [
+        { target: DeploymentTarget.VERCEL, template: 'jenkins-vercel-deploy' },
+        { target: DeploymentTarget.RAILWAY, template: 'jenkins-railway-deploy' },
+        { target: DeploymentTarget.RENDER, template: 'jenkins-render-deploy' },
+        { target: DeploymentTarget.AWS_EC2, template: 'jenkins-aws-ec2-deploy' },
+        { target: DeploymentTarget.AWS_ECS, template: 'jenkins-aws-ecs-deploy' },
+        { target: DeploymentTarget.AWS_EKS, template: 'jenkins-aws-eks-deploy' },
+        { target: DeploymentTarget.DOCKER, template: 'jenkins-docker-build' },
+      ];
+
+      for (const t of targets) {
+        const config = createMockConfig({
+          user: {
+            deploymentTarget: t.target,
+            branchStrategy: BranchStrategy.FEATURE_MAIN,
+            dockerRequired: false,
+            multiEnvironment: false,
+            environments: [],
+            enableJenkinsfile: true,
+          },
+        });
+
+        const plan = buildGenerationPlan(config);
+        const jenkinsFile = plan.files.find((f) => f.path === 'Jenkinsfile');
+        expect(jenkinsFile).toBeDefined();
+        expect(jenkinsFile!.templateId).toBe(t.template);
+      }
+    });
+
+    it('includes required target-specific variables', () => {
+      const config = createMockConfig({
+        user: {
+          deploymentTarget: DeploymentTarget.AWS_EKS,
+          branchStrategy: BranchStrategy.FEATURE_MAIN,
+          dockerRequired: false,
+          multiEnvironment: false,
+          environments: [],
+          enableJenkinsfile: true,
+        },
+      });
+
+      const plan = buildGenerationPlan(config);
+      const jenkinsFile = plan.files.find((f) => f.path === 'Jenkinsfile');
+      const keys = jenkinsFile!.variables.map(v => v.key);
+      expect(keys).toContain('jenkinsAgentLabel');
+      expect(keys).toContain('jenkinsNodeTool');
+      expect(keys).toContain('AWS_REGION');
+      expect(keys).toContain('ECR_REGISTRY');
+      expect(keys).toContain('IMAGE_NAME');
+      expect(keys).toContain('EKS_CLUSTER_NAME');
+      expect(keys).toContain('APP_NAME');
     });
   });
 });

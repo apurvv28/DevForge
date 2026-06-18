@@ -157,6 +157,7 @@ function buildDiagnoseConfig(projectRoot: string): DevForgeConfig {
       multiEnvironment: false,
       environments: [],
       enableTrivyScan: false,
+      enableJenkinsfile: false,
     },
     dryRun: false,
     generatedAt: new Date().toISOString(),

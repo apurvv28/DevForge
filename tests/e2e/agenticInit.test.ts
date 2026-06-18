@@ -118,6 +118,7 @@ function mockFirstRunPrompts(): void {
     .mockResolvedValueOnce({ dockerRequired: false })
     .mockResolvedValueOnce({ multiEnvironment: false })
     .mockResolvedValueOnce({ enableTrivyScan: false })
+    .mockResolvedValueOnce({ enableJenkinsfile: false })
     .mockResolvedValueOnce({ wantPreview: false });
 }
 

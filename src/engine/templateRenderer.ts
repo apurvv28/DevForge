@@ -60,6 +60,9 @@ const ALLOWED_VARIABLES = new Set([
   'REPLICAS',
   'PORT',
   'DOMAIN',
+  // Jenkins variables
+  'jenkinsAgentLabel',
+  'jenkinsNodeTool',
 ]);
 
 /**

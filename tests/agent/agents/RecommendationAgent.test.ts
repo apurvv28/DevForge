@@ -66,6 +66,7 @@ function buildUser() {
     dockerRequired: false,
     multiEnvironment: false,
     environments: [],
+    enableJenkinsfile: false,
   };
 }
 

@@ -37,6 +37,7 @@ function makeConfig(overrides: Partial<DevForgeConfig> = {}): DevForgeConfig {
       dockerRequired: false,
       multiEnvironment: false,
       environments: [],
+      enableJenkinsfile: false,
     },
     dryRun: false,
     generatedAt: new Date().toISOString(),

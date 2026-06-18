@@ -65,6 +65,7 @@ export const UserConfigSchema = z.object({
   environments: z.array(z.string().min(1)),
   enableTrivyScan: z.boolean().optional().default(false).optional(),
   iacTool: z.enum(['terraform', 'cdk', 'boto3', 'skip']).optional(),
+  enableJenkinsfile: z.boolean().optional().default(false).optional(),
 });
 
 export const DevForgeConfigSchema = z.object({

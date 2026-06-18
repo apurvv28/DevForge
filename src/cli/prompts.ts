@@ -123,6 +123,18 @@ export async function collectUserConfig(
 
   const enableTrivyScan: boolean = trivyAnswer.enableTrivyScan;
 
+  // Prompt for Jenkinsfile generation
+  const jenkinsAnswer = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'enableJenkinsfile',
+      message: 'Generate a Jenkinsfile alongside GitHub Actions workflows? [y/N]',
+      default: false,
+    },
+  ]);
+
+  const enableJenkinsfile: boolean = jenkinsAnswer.enableJenkinsfile;
+
   // Prompt for environment names if multi-environment is enabled
   let environments: string[] = [];
   if (multiEnvironment) {
@@ -191,6 +203,7 @@ export async function collectUserConfig(
     environments,
     enableTrivyScan,
     iacTool,
+    enableJenkinsfile,
   };
 
   // Validate with Zod schema
@@ -251,6 +264,7 @@ function printConfigSummary(config: UserConfig): void {
     ['Multi-Environment', config.multiEnvironment ? 'Yes' : 'No'],
     ['Environments', config.environments.length > 0 ? config.environments.join(', ') : 'N/A'],
     ['IaC Tool', config.iacTool ?? 'None'],
+    ['Jenkinsfile Support', config.enableJenkinsfile ? 'Yes' : 'No'],
   );
 
   console.log('\n' + table.toString() + '\n');

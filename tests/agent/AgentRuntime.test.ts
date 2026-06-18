@@ -75,6 +75,7 @@ function createContext(): AgentContext {
       dockerRequired: false,
       multiEnvironment: false,
       environments: [],
+      enableJenkinsfile: false,
     },
     dryRun: false,
     generatedAt: new Date().toISOString(),

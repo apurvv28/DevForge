@@ -58,6 +58,16 @@ const AVAILABLE_TEMPLATES = new Set<string>([
   'ecs-task-definition',
   'ecs-readme',
   'ecs-secrets-required',
+  // Jenkins pipeline templates
+  'jenkins-base-ci',
+  'jenkins-vercel-deploy',
+  'jenkins-railway-deploy',
+  'jenkins-render-deploy',
+  'jenkins-firebase-deploy',
+  'jenkins-aws-ec2-deploy',
+  'jenkins-aws-ecs-deploy',
+  'jenkins-aws-eks-deploy',
+  'jenkins-docker-build',
 ]);
 
 /**
@@ -209,6 +219,78 @@ function planDockerFiles(config: DevForgeConfig): PlannedFile[] {
 }
 
 /**
+ * Determines if a Jenkinsfile should be generated, and plans it.
+ */
+function planJenkinsFiles(config: DevForgeConfig): PlannedFile[] {
+  const files: PlannedFile[] = [];
+  const user = config.user;
+
+  if (!user.enableJenkinsfile) {
+    return files;
+  }
+
+  const baseVars = buildBaseVariables(config);
+  const variables = [
+    ...baseVars,
+    { key: 'jenkinsAgentLabel', value: 'any' },
+    { key: 'jenkinsNodeTool', value: 'NodeJS' },
+  ];
+
+  let templateId = 'jenkins-base-ci';
+
+  switch (user.deploymentTarget) {
+    case DeploymentTarget.VERCEL:
+      templateId = 'jenkins-vercel-deploy';
+      break;
+    case DeploymentTarget.RAILWAY:
+      templateId = 'jenkins-railway-deploy';
+      break;
+    case DeploymentTarget.RENDER:
+      templateId = 'jenkins-render-deploy';
+      break;
+    case DeploymentTarget.FIREBASE:
+      templateId = 'jenkins-firebase-deploy';
+      break;
+    case DeploymentTarget.AWS_EC2:
+      templateId = 'jenkins-aws-ec2-deploy';
+      break;
+    case DeploymentTarget.AWS_ECS:
+      templateId = 'jenkins-aws-ecs-deploy';
+      variables.push(
+        { key: 'AWS_REGION', value: 'us-east-1' },
+        { key: 'ECR_REGISTRY', value: '<aws_account_id>.dkr.ecr.us-east-1.amazonaws.com' },
+        { key: 'IMAGE_NAME', value: 'my-app' },
+        { key: 'ECS_CLUSTER', value: 'my-cluster' },
+        { key: 'ECS_SERVICE', value: 'my-service' },
+        { key: 'TASK_FAMILY', value: 'my-task-family' },
+      );
+      break;
+    case DeploymentTarget.AWS_EKS:
+      templateId = 'jenkins-aws-eks-deploy';
+      variables.push(
+        { key: 'AWS_REGION', value: 'us-east-1' },
+        { key: 'ECR_REGISTRY', value: '<aws_account_id>.dkr.ecr.us-east-1.amazonaws.com' },
+        { key: 'IMAGE_NAME', value: 'my-app' },
+        { key: 'EKS_CLUSTER_NAME', value: 'my-cluster' },
+        { key: 'APP_NAME', value: 'my-app' },
+      );
+      break;
+    case DeploymentTarget.DOCKER:
+      templateId = 'jenkins-docker-build';
+      variables.push({ key: 'APP_NAME', value: 'my-app' });
+      break;
+  }
+
+  files.push({
+    path: 'Jenkinsfile',
+    templateId,
+    variables,
+  });
+
+  return files;
+}
+
+/**
  * Validates that all template IDs in the plan exist in the AVAILABLE_TEMPLATES registry.
  * Throws GeneratorError if an unknown template ID is encountered.
  */
@@ -254,7 +336,8 @@ export function buildGenerationPlan(config: DevForgeConfig): GenerationPlan {
   // Plan all files
   const workflowFiles = planWorkflowFiles(config);
   const dockerFiles = planDockerFiles(config);
-  const allFiles = [...workflowFiles, ...dockerFiles];
+  const jenkinsFiles = planJenkinsFiles(config);
+  const allFiles = [...workflowFiles, ...dockerFiles, ...jenkinsFiles];
 
   // Validate all template IDs exist
   validateTemplateIds(allFiles);

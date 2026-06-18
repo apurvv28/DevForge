@@ -47,7 +47,8 @@ describe('prompts', () => {
       .mockResolvedValueOnce({ branchStrategy: branch })
       .mockResolvedValueOnce({ dockerRequired: docker })
       .mockResolvedValueOnce({ multiEnvironment: false })
-      .mockResolvedValueOnce({ enableTrivyScan: trivy });
+      .mockResolvedValueOnce({ enableTrivyScan: trivy })
+      .mockResolvedValueOnce({ enableJenkinsfile: false });
   }
 
   describe('collectUserConfig', () => {
@@ -69,6 +70,7 @@ describe('prompts', () => {
         .mockResolvedValueOnce({ dockerRequired: false })
         .mockResolvedValueOnce({ multiEnvironment: true })
         .mockResolvedValueOnce({ enableTrivyScan: false })
+        .mockResolvedValueOnce({ enableJenkinsfile: false })
         .mockResolvedValueOnce({ environments: 'dev, staging, production' });
 
       const config = await collectUserConfig(createMockDetected());
@@ -84,6 +86,7 @@ describe('prompts', () => {
         .mockResolvedValueOnce({ dockerRequired: false })
         .mockResolvedValueOnce({ multiEnvironment: true })
         .mockResolvedValueOnce({ enableTrivyScan: false })
+        .mockResolvedValueOnce({ enableJenkinsfile: false })
         .mockResolvedValueOnce({ environments: '  dev  ,  \u001b[31mstaging\u001b[0m  ,  production  ' });
 
       const config = await collectUserConfig(createMockDetected());
@@ -98,6 +101,7 @@ describe('prompts', () => {
         .mockResolvedValueOnce({ dockerRequired: false })
         .mockResolvedValueOnce({ multiEnvironment: true })
         .mockResolvedValueOnce({ enableTrivyScan: false })
+        .mockResolvedValueOnce({ enableJenkinsfile: false })
         .mockResolvedValueOnce({ environments: 'dev,' + 'a'.repeat(60) + ',prod' });
 
       await expect(collectUserConfig(createMockDetected())).rejects.toThrow(ValidationError);
@@ -110,6 +114,7 @@ describe('prompts', () => {
         .mockResolvedValueOnce({ dockerRequired: false })
         .mockResolvedValueOnce({ multiEnvironment: true })
         .mockResolvedValueOnce({ enableTrivyScan: false })
+        .mockResolvedValueOnce({ enableJenkinsfile: false })
         .mockResolvedValueOnce({ environments: '   ,   ,   ' });
 
       await expect(collectUserConfig(createMockDetected())).rejects.toThrow(ValidationError);
@@ -171,6 +176,7 @@ describe('prompts', () => {
         .mockResolvedValueOnce({ dockerRequired: false })
         .mockResolvedValueOnce({ multiEnvironment: true })
         .mockResolvedValueOnce({ enableTrivyScan: false })
+        .mockResolvedValueOnce({ enableJenkinsfile: false })
         .mockResolvedValueOnce({ environments: 'development, staging, production' });
 
       const config = await collectUserConfig(createMockDetected());
@@ -189,6 +195,7 @@ describe('prompts', () => {
         .mockResolvedValueOnce({ dockerRequired: false })
         .mockResolvedValueOnce({ multiEnvironment: true })
         .mockResolvedValueOnce({ enableTrivyScan: false })
+        .mockResolvedValueOnce({ enableJenkinsfile: false })
         .mockResolvedValueOnce({ environments: 'production' });
 
       const config = await collectUserConfig(createMockDetected());
@@ -202,6 +209,7 @@ describe('prompts', () => {
         .mockResolvedValueOnce({ dockerRequired: false })
         .mockResolvedValueOnce({ multiEnvironment: true })
         .mockResolvedValueOnce({ enableTrivyScan: false })
+        .mockResolvedValueOnce({ enableJenkinsfile: false })
         .mockResolvedValueOnce({ environments: 'dev1,dev2,staging1,staging2,production,qa,uat' });
 
       const config = await collectUserConfig(createMockDetected());

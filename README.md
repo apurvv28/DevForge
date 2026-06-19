@@ -88,7 +88,9 @@ For command details, see [docs/COMMANDS.md](docs/COMMANDS.md).
 
 `deploy` automates step-by-step AWS deployments (ECS, EKS, EC2) from the generated guide/plan with interactive prompts, live terminal output streaming, and reverse-order rollback capability.
 
-`audit` scans any GitHub Actions workflow set for security, performance, and best-practice issues. It prints a per-file report and exits non-zero when high-severity findings exist.
+`jenkins` automates the process of setting up a Jenkins job and wiring repository webhooks for a project.
+
+`audit` scans GitHub Actions workflows and Jenkinsfile configurations for security, performance, and best-practice issues. It prints a per-file report and exits non-zero when high-severity findings exist.
 
 `preview` renders the planned output in memory so you can inspect the exact YAML before anything is written to disk.
 

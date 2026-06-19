@@ -115,6 +115,18 @@ function assignSanitizedCredential(
     case 'ELASTICACHE_KEY_PREFIX':
       sanitized.ELASTICACHE_KEY_PREFIX = value;
       break;
+    case 'JENKINS_URL':
+      sanitized.JENKINS_URL = value;
+      break;
+    case 'JENKINS_USERNAME':
+      sanitized.JENKINS_USERNAME = value;
+      break;
+    case 'JENKINS_API_TOKEN':
+      sanitized.JENKINS_API_TOKEN = value;
+      break;
+    case 'GITHUB_TOKEN':
+      sanitized.GITHUB_TOKEN = value;
+      break;
     default:
       break;
   }
@@ -383,6 +395,7 @@ export class CredentialManager {
       },
     ]);
 
+    // eslint-disable-next-line security/detect-object-injection
     const sanitizedValue = sanitizeString((answers[field] as string | undefined) ?? '', 512);
     return { [field]: sanitizedValue };
   }

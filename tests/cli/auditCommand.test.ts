@@ -1,4 +1,4 @@
-import { auditWorkflowContent } from '../../src/cli/auditCommand';
+import { auditWorkflowContent, auditJenkinsfileContent } from '../../src/cli/auditCommand';
 
 function baseWorkflow(overrides: string): string {
   return `name: CI
@@ -140,3 +140,97 @@ describe('auditCommand rule coverage', () => {
     expect(issues.some((issue) => issue.code === 'B3')).toBe(true);
   });
 });
+
+function baseJenkinsfile(overrides: string): string {
+  return `pipeline {
+    agent { label 'linux' }
+    tools {
+        nodejs 'NodeJS 20'
+    }
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+    stages {
+        stage('Build') {
+            steps {
+                sh 'npm ci'
+                sh 'npm run build'
+                archiveArtifacts 'dist/**'
+            }
+        }
+    }
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
+${overrides}`;
+}
+
+describe('auditJenkinsfileContent rule coverage', () => {
+  it('flags S1 hardcoded credentials', () => {
+    const issues = auditJenkinsfileContent(
+      baseJenkinsfile('// env token = "my-secret-token"\n'),
+      'Jenkinsfile',
+    );
+    expect(issues.some((issue) => issue.code === 'S1')).toBe(true);
+  });
+
+  it('flags S2 unpinned tool version', () => {
+    const issues = auditJenkinsfileContent(
+      baseJenkinsfile('').replace("nodejs 'NodeJS 20'", "nodejs 'NodeJS'"),
+      'Jenkinsfile',
+    );
+    expect(issues.some((issue) => issue.code === 'S2')).toBe(true);
+  });
+
+  it('flags S3 missing options block or concurrent build prevention', () => {
+    // Missing disableConcurrentBuilds
+    let issues = auditJenkinsfileContent(
+      baseJenkinsfile('').replace('disableConcurrentBuilds()', ''),
+      'Jenkinsfile',
+    );
+    expect(issues.some((issue) => issue.code === 'S3')).toBe(true);
+
+    // Missing options block entirely
+    issues = auditJenkinsfileContent(
+      baseJenkinsfile('').replace(/options \{[\s\S]*?\}/, ''),
+      'Jenkinsfile',
+    );
+    expect(issues.some((issue) => issue.code === 'S3')).toBe(true);
+  });
+
+  it('flags P2 npm install usage', () => {
+    const issues = auditJenkinsfileContent(
+      baseJenkinsfile('').replace('npm ci', 'npm install'),
+      'Jenkinsfile',
+    );
+    expect(issues.some((issue) => issue.code === 'P2')).toBe(true);
+  });
+
+  it('flags P3 missing artifact archiving', () => {
+    const issues = auditJenkinsfileContent(
+      baseJenkinsfile('').replace("archiveArtifacts 'dist/**'", ''),
+      'Jenkinsfile',
+    );
+    expect(issues.some((issue) => issue.code === 'P3')).toBe(true);
+  });
+
+  it('flags B1 missing timeout configurations', () => {
+    const issues = auditJenkinsfileContent(
+      baseJenkinsfile('').replace(/timeout\(time: \d+, unit: '[A-Z]+'\)/, ''),
+      'Jenkinsfile',
+    );
+    expect(issues.some((issue) => issue.code === 'B1')).toBe(true);
+  });
+
+  it('flags B3 missing workspace cleanup in post block', () => {
+    const issues = auditJenkinsfileContent(
+      baseJenkinsfile('').replace('cleanWs()', ''),
+      'Jenkinsfile',
+    );
+    expect(issues.some((issue) => issue.code === 'B3')).toBe(true);
+  });
+});

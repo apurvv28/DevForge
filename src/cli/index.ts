@@ -18,6 +18,7 @@ import { listTransactionFiles, rollbackTransaction } from '../generator/transact
 import { AgentCache } from '../agent/cache/AgentCache';
 import { memoryStatsCommand } from './memoryCommand';
 import { deployCommand } from './deployCommand';
+import { jenkinsSetupCommand } from './jenkinsCommand';
 
 const program = new Command();
 
@@ -341,6 +342,38 @@ program
       });
     } catch (err) {
       logger.error('\n✗ Deployment failed');
+      // eslint-disable-next-line n/no-process-exit
+      process.exit(1);
+    }
+  });
+
+const jenkinsCommand = program
+  .command('jenkins')
+  .description('Automate Jenkins job creation and integration');
+
+jenkinsCommand
+  .command('setup')
+  .description('Set up a Jenkins job and GitHub webhook wiring for this project')
+  .option('--job-name <name>', 'The name of the Jenkins job to create/update')
+  .option('--jenkins-url <url>', 'Jenkins controller URL')
+  .option('--jenkins-user <user>', 'Jenkins username')
+  .option('--jenkins-token <token>', 'Jenkins API token or password')
+  .option('--credentials-id <id>', 'The Jenkins credential ID for SCM checkout')
+  .option('--branch <branch>', 'The git branch to configure for the job')
+  .option('--overwrite', 'Overwrite the job configuration if it already exists without prompting')
+  .action(async (options) => {
+    try {
+      await jenkinsSetupCommand(process.cwd(), {
+        jobName: options.jobName,
+        jenkinsUrl: options.jenkinsUrl,
+        jenkinsUser: options.jenkinsUser,
+        jenkinsToken: options.jenkinsToken,
+        credentialsId: options.credentialsId,
+        branch: options.branch,
+        overwrite: Boolean(options.overwrite),
+      });
+    } catch (err) {
+      logger.error(err instanceof Error ? err.message : String(err));
       // eslint-disable-next-line n/no-process-exit
       process.exit(1);
     }

@@ -68,6 +68,9 @@ const AVAILABLE_TEMPLATES = new Set<string>([
   'jenkins-aws-ecs-deploy',
   'jenkins-aws-eks-deploy',
   'jenkins-docker-build',
+  // Jenkins Phase 2/3 templates
+  'jenkins-job-config',
+  'jenkins-jcasc',
 ]);
 
 /**
@@ -285,6 +288,18 @@ function planJenkinsFiles(config: DevForgeConfig): PlannedFile[] {
     path: 'Jenkinsfile',
     templateId,
     variables,
+  });
+
+  // Phase 3: Also emit JCasC configuration for reproducible controllers
+  files.push({
+    path: 'jenkins.yaml',
+    templateId: 'jenkins-jcasc',
+    variables: [
+      ...baseVars,
+      { key: 'jenkinsNodeTool', value: 'NodeJS' },
+      { key: 'jenkinsUrl', value: 'http://localhost:8080/' },
+      { key: 'jenkinsCredentialsId', value: 'github-credentials' },
+    ],
   });
 
   return files;

@@ -2,9 +2,13 @@ name: DevForge CI Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - 'feature/**'
+      - 'feat/**'
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   lint:

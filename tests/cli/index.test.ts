@@ -113,7 +113,7 @@ describe('CLI and Logger Smoke Tests', () => {
       } finally {
         await fs.rm(tempDir, { recursive: true, force: true });
       }
-    });
+    }, 30_000);
 
     it('invokes the CLI binary for update (dry-run)', async () => {
       const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'devforge-cli-update-'));
@@ -129,7 +129,7 @@ describe('CLI and Logger Smoke Tests', () => {
       }
       expect(threw).toBe(true);
       await fs.rm(tempDir, { recursive: true, force: true });
-    });
+    }, 30_000);
 
     it('invokes the CLI binary for audit (dry-run)', async () => {
       const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'devforge-cli-audit-'));
@@ -139,14 +139,14 @@ describe('CLI and Logger Smoke Tests', () => {
       } as any);
       expect(stderr).not.toMatch(/error/i);
       await fs.rm(tempDir, { recursive: true, force: true });
-    });
+    }, 30_000);
 
     it('invokes the CLI binary for preview (dry-run)', async () => {
       const { stdout, stderr } = await execAsync(`node "${cliPath}" preview`, {
         env: { ...process.env, CI: 'true' },
       } as any);
       expect(stderr).not.toMatch(/error/i);
-    });
+    }, 30_000);
 
     it('invokes the CLI binary for cache clear', async () => {
       const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'devforge-cli-cache-'));

@@ -14,9 +14,9 @@ describe('Template Storage', () => {
       expect(typeof TEMPLATES).toBe('object');
     });
 
-    it('should have exactly 29 templates', () => {
+    it('should have exactly 31 templates', () => {
       const templateIds = Object.keys(TEMPLATES);
-      expect(templateIds).toHaveLength(29);
+      expect(templateIds).toHaveLength(31);
     });
 
     it('should contain all required template IDs', () => {
@@ -50,6 +50,8 @@ describe('Template Storage', () => {
         'jenkins-aws-ecs-deploy',
         'jenkins-aws-eks-deploy',
         'jenkins-docker-build',
+        'jenkins-job-config',
+        'jenkins-jcasc',
       ];
       requiredIds.forEach((id) => {
         expect(TEMPLATES).toHaveProperty(id);
@@ -102,9 +104,9 @@ describe('Template Storage', () => {
       expect(Array.isArray(ids)).toBe(true);
     });
 
-    it('should return exactly 29 template IDs', () => {
+    it('should return exactly 31 template IDs', () => {
       const ids = getAvailableTemplateIds();
-      expect(ids).toHaveLength(29);
+      expect(ids).toHaveLength(31);
     });
 
     it('should return IDs that match TEMPLATES object keys', () => {
@@ -359,6 +361,12 @@ describe('Template Storage', () => {
         'DOMAIN',
         'jenkinsAgentLabel',
         'jenkinsNodeTool',
+        'jenkinsUrl',
+        'githubOwner',
+        'githubRepo',
+        'gitRemoteUrl',
+        'jenkinsCredentialsId',
+        'branch',
       ];
 
       templates.forEach((template) => {
@@ -496,6 +504,8 @@ describe('Template Storage', () => {
         'jenkins-aws-ecs-deploy',
         'jenkins-aws-eks-deploy',
         'jenkins-docker-build',
+        'jenkins-job-config',
+        'jenkins-jcasc',
       ];
       const actualIds = getAvailableTemplateIds().sort();
       expect(actualIds).toEqual(expectedIds.sort());

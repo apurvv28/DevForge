@@ -67,19 +67,21 @@ export async function auditCommand(projectRoot: string, options: AuditOptions = 
   const workflowRoot = '.github/workflows';
   const workflowFiles = await collectWorkflowFiles(fs, workflowRoot);
 
-  if (workflowFiles.length === 0) {
-    console.log('No workflow YAML files found under .github/workflows/.');
-    if (options.fix) {
-      console.log('Auto-fix is not yet implemented. See the issues above and fix manually.');
-    }
-    process.exitCode = 0;
-    return;
-  }
+  // Note: don't exit early if no workflow files — we may still audit a Jenkinsfile
 
   const reports: AuditReport[] = [];
   for (const filePath of workflowFiles) {
     const content = await fs.readFile(filePath);
     reports.push({ filePath, issues: auditWorkflowContent(content, filePath) });
+  }
+
+  // Phase 4: Also audit Jenkinsfile if present
+  if (await fs.fileExists('Jenkinsfile')) {
+    const jenkinsContent = await fs.readFile('Jenkinsfile');
+    reports.push({
+      filePath: 'Jenkinsfile',
+      issues: auditJenkinsfileContent(jenkinsContent, 'Jenkinsfile'),
+    });
   }
 
   let hasCritical = false;
@@ -108,6 +110,10 @@ export async function auditCommand(projectRoot: string, options: AuditOptions = 
     }
 
     console.log(table.toString());
+  }
+
+  if (workflowFiles.length === 0 && reports.length === 0) {
+    console.log('No workflow YAML or Jenkinsfile found to audit.');
   }
 
   if (options.fix) {
@@ -209,6 +215,97 @@ export function auditWorkflowContent(content: string, filePath: string): AuditIs
   }
 
   return issues;
+}
+
+export function auditJenkinsfileContent(content: string, filePath: string): AuditIssue[] {
+  const issues: AuditIssue[] = [];
+
+  if (hasJenkinsHardcodedCredential(content)) {
+    issues.push({
+      code: 'S1',
+      level: 'CRITICAL',
+      message: `Possible hardcoded credential in ${filePath}`,
+    });
+  }
+
+  if (hasUnpinnedJenkinsTool(content)) {
+    issues.push({
+      code: 'S2',
+      level: 'HIGH',
+      message: 'Tool version is not pinned to a specific version',
+    });
+  }
+
+  if (!/options\s*\{/i.test(content) || !/disableConcurrentBuilds\s*\(/i.test(content)) {
+    issues.push({
+      code: 'S3',
+      level: 'MEDIUM',
+      message: 'Jenkinsfile is missing options block or concurrent build prevention',
+    });
+  }
+
+  if (/npm\s+install\b/i.test(content) && !/npm\s+ci\b/i.test(content)) {
+    issues.push({
+      code: 'P2',
+      level: 'LOW',
+      message: 'Use npm ci instead of npm install in CI',
+    });
+  }
+
+  if (/build/i.test(content) && !/archiveArtifacts/i.test(content)) {
+    issues.push({
+      code: 'P3',
+      level: 'INFO',
+      message: 'No artifact archiving step detected for build outputs',
+    });
+  }
+
+  if (!/timeout\s*\(/i.test(content)) {
+    issues.push({
+      code: 'B1',
+      level: 'LOW',
+      message: 'No timeout configured for pipeline',
+    });
+  }
+
+  if (!/cleanWs\s*\(/i.test(content)) {
+    issues.push({
+      code: 'B3',
+      level: 'INFO',
+      message: 'No workspace cleanup (cleanWs) configured in post block',
+    });
+  }
+
+  return issues;
+}
+
+function hasJenkinsHardcodedCredential(content: string): boolean {
+  return content.split(/\r?\n/).some((line) => {
+    const match = line.match(/\b(token|password|key|secret)\b\s*[=:]\s*['"]([^'"]+)['"]/i);
+    if (!match) return false;
+    const val = match[2]?.trim() ?? '';
+    if (
+      val.startsWith('$') ||
+      val.includes('credentials(') ||
+      val.includes('env.') ||
+      val.includes('params.')
+    ) {
+      return false;
+    }
+    return val.length > 0;
+  });
+}
+
+function hasUnpinnedJenkinsTool(content: string): boolean {
+  const toolRegex = /\b(nodejs|maven|jdk|gradle)\s+['"]([^'"]+)['"]/gi;
+  let match;
+  while ((match = toolRegex.exec(content)) !== null) {
+    const toolName = match[2];
+    if (toolName && !/\d/.test(toolName)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 async function collectWorkflowFiles(fs: DevForgeFS, workflowRoot: string): Promise<string[]> {

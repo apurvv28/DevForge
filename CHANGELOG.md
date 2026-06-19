@@ -1,3 +1,13 @@
+# [1.3.0](https://github.com/apurvv28/DevForge/compare/v1.2.0...v1.3.0) (2026-06-19)
+
+
+### Features
+
+* **jenkins:** implement automated Jenkins job & repository setup CLI command (`devforge jenkins setup`)
+* **jenkins:** automatically generate configuration-as-code (`jenkins.yaml`) for Jenkins controllers
+* **jenkins:** extend `devforge audit` to scan Jenkinsfile contents for hardcoded credentials, unpinned tools, missing concurrency prevention, and other performance/security best practices
+* **git:** add Git utility helpers for remote origin detection and parsing
+
 # [1.2.0](https://github.com/apurvv28/DevForge/compare/v1.1.5...v1.2.0) (2026-06-13)
 
 

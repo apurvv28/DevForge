@@ -15,6 +15,12 @@ export const KNOWN_CREDENTIAL_KEYS = new Set([
   'ELASTICACHE_AUTH_TOKEN',
   'ELASTICACHE_TLS',
   'ELASTICACHE_KEY_PREFIX',
+  // Jenkins credentials
+  'JENKINS_URL',
+  'JENKINS_USERNAME',
+  'JENKINS_API_TOKEN',
+  // GitHub token (for webhook registration)
+  'GITHUB_TOKEN',
 ]);
 
 export function isKnownCredentialKey(key: string): key is string {

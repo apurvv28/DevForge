@@ -13,6 +13,7 @@ This page is the comprehensive reference for all shipped DevForge CLI commands, 
 | [`devforge preview`](#devforge-preview) | Preview generated workflows before writing to disk | Core |
 | [`devforge audit`](#devforge-audit) | Audit workflows for security & compliance | Security |
 | [`devforge deploy`](#devforge-deploy) | Automate AWS deployment steps from generated guide | Deployment |
+| [`devforge jenkins setup`](#devforge-jenkins-setup) | Set up a Jenkins job and GitHub webhook wiring | Integration |
 | [`devforge diagnose`](#devforge-diagnose) | Run pipeline failure diagnosis | Diagnostics |
 | [`devforge rollback`](#devforge-rollback) | Rollback a previous generation transaction | Core |
 | [`devforge agent status`](#devforge-agent-status) | Show AI provider config and cache stats | Agent |
@@ -196,6 +197,38 @@ npx devforge diagnose --json
 
 - Analyzes pipeline logs and system context.
 - Prints a structured list of failures and remediation steps.
+
+---
+
+## 🏗️ CI/CD Integration
+
+### `devforge jenkins setup`
+
+Automates the process of setting up a Jenkins job and wiring repository webhooks for a project.
+
+#### Flags
+
+- `--job-name <name>` - The name of the Jenkins job to create or update (defaults to detected project name).
+- `--jenkins-url <url>` - Jenkins controller URL (overrides stored configuration).
+- `--jenkins-user <user>` - Jenkins username (overrides stored configuration).
+- `--jenkins-token <token>` - Jenkins API token or password (overrides stored configuration).
+- `--credentials-id <id>` - The Jenkins credential ID for SCM checkout (default: `github-credentials`).
+- `--branch <branch>` - The git branch to configure for the job (default: current git branch).
+- `--overwrite` - Overwrite the job configuration if it already exists without prompting.
+
+#### Example
+
+```bash
+npx devforge jenkins setup --jenkins-url http://localhost:8080 --jenkins-user admin --jenkins-token my-token --overwrite
+```
+
+#### Output
+
+- Connects to the remote Jenkins controller and fetches CSRF crumb.
+- Renders the `config.xml` template with the repository SCM remote URL and SCM branch.
+- Creates or updates the pipeline job on Jenkins.
+- Registers a GitHub webhook if `GITHUB_TOKEN` is available in environment variables.
+- Triggers the initial build of the job.
 
 ---
 

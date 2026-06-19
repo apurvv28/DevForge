@@ -63,6 +63,13 @@ const ALLOWED_VARIABLES = new Set([
   // Jenkins variables
   'jenkinsAgentLabel',
   'jenkinsNodeTool',
+  // Jenkins Phase 2/3 variables
+  'jenkinsUrl',
+  'githubOwner',
+  'githubRepo',
+  'gitRemoteUrl',
+  'jenkinsCredentialsId',
+  'branch',
 ]);
 
 /**

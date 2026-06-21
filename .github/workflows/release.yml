@@ -12,6 +12,9 @@ permissions:
   packages: write
   # Required secrets: NPM_TOKEN, GITHUB_TOKEN
 
+env:
+  HUSKY: 0
+
 jobs:
   release:
     name: Test and Publish

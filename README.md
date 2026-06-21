@@ -11,11 +11,11 @@ For command details, see [docs/COMMANDS.md](docs/COMMANDS.md).
 
 ## AI Features
 
-- ✦ Automatic LLM provider setup for Amazon Nova Pro, Gemini, OpenAI, Anthropic, and Bedrock.
-- ✦ Recommendation Agent — runs on every init and flags pipeline issues.
-- ✦ Security & Compliance Agent — NIST SP 800-53 + ISO 27001 scanning.
-- ✦ Cross-session memory via Amazon Elastic.
-- ✦ Full offline mode — AI is optional and the v1 engine always works.
+- Automatic LLM provider setup for Amazon Nova Pro, Gemini, OpenAI, Anthropic, and Bedrock.
+- Recommendation Agent — runs on every init and flags pipeline issues.
+- Security & Compliance Agent — NIST SP 800-53 + ISO 27001 scanning.
+- Cross-session memory via Amazon Elastic.
+- Full offline mode — AI is optional and the v1 engine always works.
 
 ## Problem
 
@@ -98,12 +98,12 @@ For command details, see [docs/COMMANDS.md](docs/COMMANDS.md).
 
 DevForge detects existing IaC and, when none is present, can generate it:
 
-- ✦ IaC detection (Terraform, CDK, boto3, Pulumi, Ansible)
-- ✦ Automated deployment via detected IaC (with human-in-the-loop confirmation)
-- ✦ LLM-assisted IaC generation — files assembled from verified building-block templates
-- ✦ Verification loop: `terraform validate`, `cdk synth`, `python -m py_compile` before writing any file
-- ✦ Retry loop: up to `DEVFORGE_IAC_MAX_RETRY` attempts (default 2), with error context fed back to the LLM
-- ✦ Trivy IaC misconfiguration scanning on generated configs
+- IaC detection (Terraform, CDK, boto3, Pulumi, Ansible)
+- Automated deployment via detected IaC (with human-in-the-loop confirmation)
+- LLM-assisted IaC generation — files assembled from verified building-block templates
+- Verification loop: `terraform validate`, `cdk synth`, `python -m py_compile` before writing any file
+- Retry loop: up to `DEVFORGE_IAC_MAX_RETRY` attempts (default 2), with error context fed back to the LLM
+- Trivy IaC misconfiguration scanning on generated configs
 
 See [docs/IAC.md](docs/IAC.md) for full details.
 

@@ -1,3 +1,16 @@
+# [1.3.0](https://github.com/apurvv28/DevForge/compare/v1.2.0...v1.3.0) (2026-06-21)
+
+
+### Bug Fixes
+
+* release and ci pipelines ([889b163](https://github.com/apurvv28/DevForge/commit/889b163cd42129072851af768a0c37b28d7be266))
+
+
+### Features
+
+* implement jenkinsfile generation (phase 1) and disable release workflow ([84666b4](https://github.com/apurvv28/DevForge/commit/84666b411d59091adc71edd0d240ebee340de7db))
+* jenkins automated pipelines integration ([f58966a](https://github.com/apurvv28/DevForge/commit/f58966a760c3e33eb42c1f9320209d46b65fdddc))
+
 # [1.3.0](https://github.com/apurvv28/DevForge/compare/v1.2.0...v1.3.0) (2026-06-19)
 
 
